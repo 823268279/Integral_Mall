@@ -1,25 +1,20 @@
 import pytest
 import requests
-import sys
-import json
-import datetime
 from comm.comm_way import Way#公共方法
 comm_way=Way()
 
-CpnID='0001'
-SubID='3378049226@qq.com'
-url='http://api.newcrm.group.weixin.wuerp.com/member/v1.0%s'
+
 #短信验证码
-# def test_smscode():
+# def test_smscode(menber):
 #         data={
 #                 "cpnID":"",
 #                 "SubID":"",
 #                 "tel":"13183807891",
 #                 }
 #         try:
-#                 data['CpnID'] = CpnID
-#                 data['SubID'] = SubID
-#                 response=requests.post(url=url % '/SMS/SendSMSCode',data=data)
+#                 data['CpnID'] = menber['CpnID']
+#                 data['SubID'] = menber['SubID']
+#                 response=requests.post(url=menber['url'] % '/SMS/SendSMSCode',data=data)
 #                 print(response.status_code)
 #                 print(response.json())
 #         except:
@@ -29,11 +24,7 @@ url='http://api.newcrm.group.weixin.wuerp.com/member/v1.0%s'
 
 
 #会员注册   
-def test_menber_register(headers_x):
-        #随机openid
-        random_openid = comm_way.get_openid()
-        #随机会员信息
-        random_menber = comm_way.menber_information_random()
+def test_menber_register(headers,menber,menber_data_random):
         data={
                 "CpnID":"",
                 "SubID":"",
@@ -43,11 +34,11 @@ def test_menber_register(headers_x):
                 "OrgID":"",
                 "IDSource":"100",
                 "UserSource":"",
-                "Tel":"13183805656",
+                "Tel":"",
                 "Eml":"",
                 "IDntTp":"",
                 "IDntNmb":"",
-                "Brth":"2020-06-03",
+                "Brth":"",
                 "Sex":"1",
                 "Prvc":"",
                 "City":"",
@@ -59,13 +50,13 @@ def test_menber_register(headers_x):
                 "AppSecret":""
                 }
         try:
-                data['CpnID'] = CpnID
-                data['SubID'] = SubID
-                data['OpnID'] = random_openid
-                data['Name'] = random_menber[1]
-                data['Tel'] = random_menber[2]
-                data['Brth'] = random_menber[3]
-                response=requests.post(url=url % '/Guest/Register',data=data,headers=headers_x)
+                data['CpnID'] = menber['CpnID']
+                data['SubID'] = menber['SubID']
+                data['OpnID'] = menber_data_random['OpnID']
+                data['Name'] = menber_data_random['Name']
+                data['Tel'] = menber_data_random['Tel']
+                data['Brth'] = menber_data_random['Brth']
+                response=requests.post(url=menber['url'] % '/Guest/Register',data=data,headers=headers)
                 response_json=response.json()
                 print(response_json)
                 assert response.status_code == 200
@@ -82,7 +73,7 @@ def test_menber_register(headers_x):
                 test_data=["test_case","request_way","request_url","request_body","response_body"]
                 test_data[0]="会员注册"
                 test_data[1]="POST"
-                test_data[2]=str(url)
+                test_data[2]=str(response.url)
                 test_data[3]=str(data)
                 test_data[4]=str(response_json)
                 comm_way.xlsx_write_way(2,test_data)
@@ -90,17 +81,17 @@ def test_menber_register(headers_x):
                 raise
 
 #获取首页的会员数据
-def test_get_index_menber_data(headers_x,menber_register_data):
+def test_get_index_menber_data(headers,menber,menber_register_data):
         data={
                 "CpnID":"",
                 "SubID":"",
                 "gstID":""}
 
         try:    
-                data['CpnID']=CpnID
-                data['SubID']=SubID
-                data['gstID']=menber_register_data['gstID']
-                response=requests.post(url=url % '/Guest/GetMainGst',data=data,headers=headers_x)
+                data['CpnID'] = menber['CpnID']
+                data['SubID'] = menber['SubID']
+                data['gstID'] = menber_register_data['gstID']
+                response=requests.post(url=menber['url'] % '/Guest/GetMainGst',data=data,headers=headers)
                 response_json=response.json()
                 assert response.status_code == 200
                 assert response_json['message'] == "获取成功"
@@ -113,7 +104,7 @@ def test_get_index_menber_data(headers_x,menber_register_data):
 
         
 #获取某个会员积分明细
-def test_select_integral(headers_x,menber_register_data):  
+def test_select_integral(headers,menber,menber_register_data):  
         data = {
                  "CpnID":"",
                  "crdNo":"",
@@ -122,9 +113,9 @@ def test_select_integral(headers_x,menber_register_data):
                  "sort":"1",
                 }
         try:
-                data['CpnID'] = CpnID
+                data['CpnID'] = menber['CpnID']
                 data['crdNo'] = menber_register_data['crdFaceID']
-                response=requests.post(url=url % '/IntgAct/GetIntgActPage',data=data,headers=headers_x)
+                response=requests.post(url=menber['url'] % '/IntgAct/GetIntgActPage',data=data,headers=headers)
                 response_json=response.json()
                 assert response.status_code == 200
                 assert response_json['message'] =='获取数据成功'
@@ -138,15 +129,15 @@ def test_select_integral(headers_x,menber_register_data):
                 raise
 
 #查询某个会员总积分
-def test_select_menber_sum_integral(headers_x,menber_register_data):  
+def test_select_menber_sum_integral(headers,menber,menber_register_data):  
         data={
                 "CpnID":"",
                 "crdNo":""
         }
         try:
-                data['CpnID'] = CpnID
+                data['CpnID'] = menber['CpnID']
                 data['crdNo'] =menber_register_data['crdFaceID']
-                response=requests.post(url=url % '/Intg/GetIntgSum',data=data,headers=headers_x)
+                response=requests.post(url=menber['url'] % '/Intg/GetIntgSum',data=data,headers=headers)
                 response_json=response.json()
                 print('会员总积分：%s'% response_json['data']['SumIntg'])
                 assert response.status_code == 200
@@ -155,17 +146,17 @@ def test_select_menber_sum_integral(headers_x,menber_register_data):
                 raise
 
 #获取某个会员的全部卡
-def test_select_menber_allcard(headers_x,menber_register_data):  
+def test_select_menber_allcard(headers,menber,menber_register_data):  
         data={
                 "CpnID":"",
                 "SubID":"",
                 "opnID":"",
                 }
         try:
-                data['CpnID']=CpnID
-                data['SubID']=SubID
-                data['opnID']=menber_register_data['opnID']
-                response=requests.post(url=url % '/VipCrd/Get',data=data,headers=headers_x)
+                data['CpnID'] = menber['CpnID']
+                data['SubID'] = menber['SubID']
+                data['opnID'] = menber_register_data['opnID']
+                response=requests.post(url=menber['url'] % '/VipCrd/Get',data=data,headers=headers)
                 response_json=response.json()
                 assert response.status_code == 200
                 assert response_json['message'] =='获取数据成功'
@@ -179,15 +170,15 @@ def test_select_menber_allcard(headers_x,menber_register_data):
                 raise
 
 #根据卡账户获取单张卡
-def test_select_only_card(headers_x,menber_register_data):
+def test_select_only_card(headers,menber,menber_register_data):
         data={
                 "CpnID":"0001",
                 "crdID":"",
                 }
         try:
-                data['CpnID']=CpnID
-                data['crdID']=menber_register_data['crdID']
-                response=requests.post(url=url % '/VipCrd/GetByCrdID',data=data,headers=headers_x)
+                data['CpnID'] = menber['CpnID']
+                data['crdID'] = menber_register_data['crdID']
+                response=requests.post(url=menber['url'] % '/VipCrd/GetByCrdID',data=data,headers=headers)
                 response_json=response.json()
                 assert response.status_code == 200
                 assert response_json['message'] =='获取数据成功'
@@ -197,16 +188,16 @@ def test_select_only_card(headers_x,menber_register_data):
 
 class Test_dynamic_code():
         #生成会员动态码
-        def test_create_dynamic_code(self,headers_x,menber_register_data):
+        def test_create_dynamic_code(self,headers,menber,menber_register_data):
                 data={"CpnID":"0001",   
                         "Code":"",      #卡账号/券账号
                         "Tp":"0",        #帐号类型 0-会员卡、1-优惠券
                         "expires":"5"}   #动态码过期时间(分钟)
                 try:
-                        data['CpnID']=CpnID
-                        data['Code']=menber_register_data['crdID']
+                        data['CpnID'] = menber['CpnID']
+                        data['Code'] = menber_register_data['crdID']
                         data['Tp']=0
-                        response=requests.post(url=url % '/DynamicCode/GetDynamicCode',data=data,headers=headers_x)
+                        response=requests.post(url=menber['url'] % '/DynamicCode/GetDynamicCode',data=data,headers=headers)
                         response_json=response.json()
                         global response_menber_dynamic_code
                         response_menber_dynamic_code = response_json['data']['dynamicCode']
@@ -217,11 +208,11 @@ class Test_dynamic_code():
                         raise
 
         #根据动态码获取会员卡
-        def test_check_dynamic_code(self,headers_x):
+        def test_check_dynamic_code(self,headers,menber):
                 data={"DynamicCode":""} #动态码
                 try:
                         data['DynamicCode']=response_menber_dynamic_code
-                        response=requests.post(url=url % '/DynamicCode/QueryDynamicCode',data=data,headers=headers_x)
+                        response=requests.post(url=menber['url'] % '/DynamicCode/QueryDynamicCode',data=data,headers=headers)
                         response_json=response.json()
                         assert response.status_code == 200
                         assert response_json['message'] =='获取数据成功'
@@ -230,7 +221,7 @@ class Test_dynamic_code():
                         raise
 class Test_sign_in():
         #签到
-        def test_signin(self,headers_x,menber_register_data):
+        def test_signin(self,headers,menber,menber_register_data):
                 data={
                         "CpnID":"",
                         "SubID":"",
@@ -239,19 +230,18 @@ class Test_sign_in():
                         "Brf":"apitest"
                         }
                 try:
-                        data['CpnID']=CpnID
-                        data['SubID']=SubID
+                        data['CpnID'] = menber['CpnID']
+                        data['SubID'] = menber['SubID']
                         data['GstID']=menber_register_data['gstID']
                         data['VipID']=menber_register_data['crdFaceID']
-                        response=requests.post(url=url % '/SignIn/SignIn',data=data,headers=headers_x)
+                        response=requests.post(url=menber['url'] % '/SignIn/SignIn',data=data,headers=headers)
                         response_json=response.json()
-                        print(response_json)
                         assert response.status_code == 200
                         assert response_json['message'] =='签到成功'
                 except:
                         raise
         #获取签到记录
-        def test_signin_record(self,headers_x,menber_register_data):
+        def test_signin_record(self,headers,menber,menber_register_data,now_time):
                 data={
                         "CpnID":"",
                         "SubID":"",
@@ -259,11 +249,11 @@ class Test_sign_in():
                         "EndTime":""
                         }
                 try:
-                        data['CpnID']=CpnID
-                        data['SubID']=SubID
+                        data['CpnID'] = menber['CpnID']
+                        data['SubID'] = menber['SubID']
                         data['gstid']=menber_register_data['gstID']
-                        data['EndTime']=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                        response=requests.post(url=url % '/SignIn/GetSign',data=data,headers=headers_x)
+                        data['EndTime']=now_time['ymd_hms']
+                        response=requests.post(url=menber['url'] % '/SignIn/GetSign',data=data,headers=headers)
                         response_json=response.json()
                         assert response.status_code == 200
                         if response_json['data']['Data']:
@@ -276,17 +266,17 @@ class Test_sign_in():
                         raise
 
 #会员解绑
-def test_menber_untie(headers_x):
+def test_menber_untie(headers,menber):
         data={
                 "CpnID":"",
                 "SubID":"",
                 "Tel":""
                 }
         try:
-                data['CpnID']=CpnID
-                data['SubID']=SubID
+                data['CpnID'] = menber['CpnID']
+                data['SubID'] = menber['SubID']
                 data['Tel']=13183807891
-                response=requests.post(url=url % '/Guest/UntieBind',data=data,headers=headers_x)
+                response=requests.post(url=menber['url'] % '/Guest/UntieBind',data=data,headers=headers)
                 response_json=response.json()
                 assert response.status_code == 200
                 assert response_json['message'] =='解绑成功'

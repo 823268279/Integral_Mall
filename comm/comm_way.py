@@ -26,17 +26,6 @@ from email.utils import parseaddr, formataddr
 
 
 class Way():
-      def now_time(self):
-            nowtime_x=datetime.datetime.now().strftime('%Y-%m-%d')
-            nowtime_y=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            return nowtime_x ,nowtime_y
-      def xmltodict(self,xml):
-            data_xml = xmltodict.parse(xml)
-            data_json = json.dumps(data_xml)
-            return data_json
-      def dicttoxml(self,json):
-            data_xml = dicttoxml.dicttoxml(json,root=False,attr_type=False).decode('utf-8') 
-            return data_xml
       #创建excel
       def create_excel_file(self):
             # global __file__
@@ -75,145 +64,10 @@ class Way():
             table_head=["test_case","test_name","request_way","request_url","request_body","response_body","备注"]
             for i in range(1,len(table_head)+1):
                   sheet1.cell(1,i).value=table_head[i-1]
-         
-
             #写入数据的规则
             for i in range(len(y)):
-                  sheet1.cell(x,2+i).value=y[i]
-                  
+                  sheet1.cell(x,2+i).value=y[i]  
             wb.save(__file__)
-      #读取excel数据
-      def xlsx_read_way(self):
-            __file__ = r'../test_data/2020-05-09-09-27_test_data.xlsx'
-            workbook=load_workbook(__file__)
-            worksheet=workbook['Sheet1']
-            return worksheet
-      #商品资料
-      def commodity_random(self):
-            list=[]
-            a = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't',
-                        'u', 'v', 'w', 'x', 'y', 'z']
-            b = ['袋','包','盒','瓶','件','箱','个']
-            c = ['黑龙江','山东','河南','湖北','山西','安徽','湖南','陕西','福建','吉林','四川','甘肃','江苏','云南','贵州',
-                  '江西','浙江','海南','辽宁','台湾','河北','青海','广东']
-            #赠品编码
-            list.append('%s%s' % (sum(random.sample(range(10000,90000),4)),sum(random.sample(range(100,900000),4))))
-            #赠品品牌
-            list.append('赠品品牌%s%s' % (random.choice(a),sum(random.sample(range(100,1000),2))))
-            #赠品名称
-            list.append('赠品名称%s%s' % (random.choice(a),sum(random.sample(range(100,1000),2))))
-            #赠品规格
-            list.append('%sg' % sum(random.sample(range(50,400),2))) 
-            #赠品单位
-            list.append(random.choice(b))
-            #赠品进货价
-            purchasing_price = int(sum(random.sample(range(2000,7000),2)))
-            list.append(purchasing_price)
-            #赠品零售价
-            list.append(purchasing_price + sum(random.sample(range(500,2000),2)))
-            #赠品产地
-            list.append(random.choice(c))
-            return list
-      #活动名称
-      def activity_name_random(self):
-            a = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
-                 'U', 'V', 'W', 'X', 'Y', 'Z']
-            x = '会员活动%s%s%s%s'% (random.choice(a),random.choice(a),sum(random.sample(range(10,100),2)),sum(random.sample(range(10,100),2)))
-            return x
-      #随机openid
-      def get_openid(self):
-            a = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
-                 'U', 'V', 'W', 'X', 'Y', 'Z']
-            x = '%s%s%s%s%s%s%s-'%(random.choice(a),random.choice(a),random.choice(a),random.choice(a),random.choice(a),random.choice(a),random.choice(a))
-            y = '%s%s%s-%s%s%s%s'%(random.choice(a),random.choice(a),random.choice(a),random.choice(a),random.choice(a),random.choice(a),random.choice(a))
-            z = '%s%s%s%s%s-%s%s'%(random.choice(a),random.choice(a),random.choice(a),random.choice(a),random.choice(a),random.choice(a),random.choice(a))
-            v = '%s%s%s'%(x,y,z)
-            return v
-
-      #随机会员信息
-      def menber_information_random(self):
-            list=[]
-            a = ['01','02','03','04']
-            b = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
-                        'U', 'V', 'W', 'X', 'Y', 'Z']
-            c = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't',
-                  'u', 'v', 'w', 'x', 'y', 'z']
-            #卡类型
-            list.append(random.choice(a))      
-            #姓名
-            q1 = '%s%s' % (random.choice(b),random.choice(b))
-            q2 = '%s%s%s%s%s' % (random.choice(c),random.choice(c),random.choice(c),random.choice(c),random.choice(c))
-            list.append('%s%s' % (q1,q2))
-            #手机
-            list.append('13%s%s' % (sum(random.sample(range(10000,100000),1)),sum(random.sample(range(1000,10000),1))))
-            #生日
-            e1 = '19%s'% (sum(random.sample(range(10,100),1)))
-            e2 = '0%s'% sum(random.sample(range(1,10),1))
-            e3 = '%s'% sum(random.sample(range(10,29),1))
-            list.append('%s-%s-%s'% (e1,e2,e3))
-            #身份证
-            r1 = '%s'% sum(random.sample(range(1000,10000),1)) 
-            r2 = '%s%s%s'% (e1,e2,e3)
-            r3 = '%s'% sum(random.sample(range(1000,10000),1)) 
-            list.append('51%s%s%s'% (r1,r2,r3))
-            return list
-      #随机停车场信息
-      def parking_data_random(self):
-            list=[]
-            #停车场编号
-            list.append(sum(random.sample(range(10000000,999999999),4)))
-            #故障热线
-            list.append('13%s%s' % (sum(random.sample(range(10000,100000),1)),sum(random.sample(range(1000,10000),1))))
-            return list
-      #储值兑换线/返利兑换线
-      def exchange_money_random(self):
-            z='%s' % sum(random.sample(range(1000,7000),1))    
-            return str(z)
-      #充值金额/冲正积分
-      def top_up_random(self):
-            z='%s' % sum(random.sample(range(50000,100000),1))    
-            return str(z)
-      def cash_register_header(self):
-            hdr_json = {
-                  "hdr": {
-                        "row": {
-                              "command": "0",#指令
-                              "postype": "0",#商城类型
-                              "corpid": "200002",#企业编号
-                              "organ": "0000",#机构
-                              "posid": "POS006",#收银机编号
-                              "billid": "",#消费小票号
-                              "receid": "1001",#门店
-                              "credential": "28ee304a-8aae-11ea-aa9f-00e04c361826",#收银机标识符
-                              "keyid": "",
-                              "types": "1"
-                        }
-                  }
-            }
-            return hdr_json
-      #会员消费小票号
-      def billid_random_a(self):
-            x = sum(random.sample(range(80000,900000),4))
-            return x
-      #会员消费随机金额
-      def expenditure_sum(self):
-            x = sum(random.sample(range(50,300),1))
-            return x
-      #会员消费流水号
-      def billid_random_b(self):
-            x = sum(random.sample(range(80000,900000),4))
-            y = sum(random.sample(range(80000,900000),4))
-            z = '%s%s' % (x,y)
-            return z
-      #会员消费订单号
-      def Orderid_random(self):
-            a = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't',
-                                    'u', 'v', 'w', 'x', 'y', 'z']
-            x = '%s%s%s%s' % (sum(random.sample(range(0,10000),3)),random.choice(a),sum(random.sample(range(0,10000),3)),random.choice(a))
-            y = '%s%s%s%s' % (sum(random.sample(range(0,10000),3)),random.choice(a),sum(random.sample(range(0,10000),3)),random.choice(a))
-            z = '%s%s' % (x,y)
-            return z
-      
 
 #获取最新html报告
 class Report():  
@@ -273,7 +127,3 @@ class Smtp():
         server.sendmail(user,[user_to],msg.as_string())
         server.quit()
 
-
-
-z=Way().parking_data_random()
-print(z)
