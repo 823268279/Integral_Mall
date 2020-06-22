@@ -2,36 +2,23 @@ import pytest
 import requests
 import sys
 import json
+import random
 from comm.comm_way import Way#公共方法
 comm_way=Way()
 
 
 class Test_login():
-        #登录账号
-        userid='miscs3'
-        password='111111'
-        #登录密码
-        #获取验证码
-        def test_get_auth_code(self,manage):
-                response=requests.post(url=manage['url'] % '/User/GetCode')
-                response_json=response.json()
-                global auth_code
-                auth_code = response_json['data']['Data']
-                assert response.status_code == 200
-                assert response_json['success'] == True
-
-
         #后台正确账号和正确密码登录
-        def test_login_correct(self,manage):
+        def test_login_correct(self,manage,phone_code):
                 data={
                         "loginID":"",
                         "loginPwd":"",
                         "checkCode":""
                 }
                 try:
-                        data['loginID'] = Test_login.userid
-                        data['loginPwd'] = Test_login.password
-                        data['checkCode'] = auth_code
+                        data['loginID'] = manage['username']
+                        data['loginPwd'] = manage['password']
+                        data['checkCode'] = phone_code
                         response=requests.post(url=manage['url'] % '/User/Login',data=data)
                         response_json=response.json()
                         global loginID
@@ -41,20 +28,21 @@ class Test_login():
                 except:
                         raise
         #后台正确账号和错误密码登录
-        def test_login_error_pwd(self,manage):
+        def test_login_error_pwd(self,manage,phone_code):
                 data={
                         "loginID":"",
                         "loginPwd":"",
                         "checkCode":""
                 }
                 try:
-                        data['loginID'] = Test_login.userid
-                        data['loginPwd'] = '123456'
-                        data['checkCode'] = auth_code
+                        data['loginID'] = manage['username']
+                        data['loginPwd'] = '#$%^&***%$#^^%^%$^%$^$^%$%'
+                        data['checkCode'] = phone_code
                         response=requests.post(url=manage['url'] % '/User/Login',data=data)
                         response_json=response.json()
                         assert response.status_code == 200
-                        assert response_json['success'] == False
+                        assert response_json['Message'] == '帐号或密码错误'
+                        print(response_json['Message'])
                 except:
                         raise
         #获取用户信息
@@ -73,10 +61,11 @@ class Test_login():
 
 
 class Test_select_vipdata():
-        #查询会员数据分页
+        #查询会员资料分页
         def test_select_menber_data_page(self,headers,manage):
                 data={
                         "CpnID":"",
+                        "SubID":"",
                         "pageIndex":"1",
                         "pageSize":"10",
                         "sort":"uptDtt desc",
@@ -151,7 +140,7 @@ class Test_menber_data():
                         raise
 
         #修改会员信息
-        def test_modify_menber_data(self,headers,manage,menber_data_random):
+        def test_update_menber_data(self,headers,manage,menber_data_random):
                 data={}
                 try:
                         data['ID']=menber_data['id']
@@ -201,38 +190,39 @@ class Test_menber_data():
                         response_json=response.json()
                         assert response.status_code == 200
                         assert response_json['message'] == "修改成功"
+                        print(response_json['message'])
                 except:
                         raise
 
 
-class Test_select_vipcard():
+class Test_get_vipcard():
         #查询会员卡分页
-        def test_select_vipcard_paging(self,headers,manage):
+        def test_get_vipcard_paging(self,headers,manage):
                 data={
                         "CpnID":"",    
                         "pageIndex":"1",      
                         "pageSize":"10",       
-                        "sort":"uptDtt desc",     
+                        "sort":"uptDtt desc",    
                         "CrdID":"",     #查询条件
                         "CrdNo":"",
                         "GstID":""
                         }
                 try:
                         data['CpnID']=manage['CpnID']
-                        response=requests.post(url=manage['url'] % '/VipCrd/GetPageByParam',params=data,headers=headers)
+                        response=requests.post(url=manage['url'] % '/VipCrd/GetPageByParam',data=data,headers=headers)
                         response_json=response.json()
                         assert response.status_code == 200
                         assert response_json['message'] =='获取数据成功'
                         if response_json['data']['PageDataList']:
                                 for i in response_json['data']['PageDataList']:
-                                        print('姓名：%s;电话：%s;会员卡号：%s' % (i['name'],i['mbl'],i['vipID']))
+                                        print('姓名:%s；电话:%s；会员卡号:%s' % (i['name'],i['mbl'],i['vipID']))
                         else:
                                 print('没有会员')
                 except:
                         raise
 
         #根据卡账号查询会员
-        def test_select_vipcard_paging_gstid(self,headers,manage,menber_register_data):
+        def test_get_vipcard_paging_gstid(self,headers,manage,menber_register_data):
                 data={
                         "CpnID":"",    
                         "pageIndex":"1",      
@@ -245,55 +235,65 @@ class Test_select_vipcard():
                 try:
                         data['CpnID']=manage['CpnID']
                         data['GstID']=menber_register_data['gstID']
-                        response=requests.post(url=manage['url'] % '/VipCrd/GetPageByParam',params=data,headers=headers)
+                        response=requests.post(url=manage['url'] % '/VipCrd/GetPageByParam',data=data,headers=headers)
                         response_json=response.json()
                         assert response.status_code == 200
                         assert response_json['message'] =='获取数据成功'
+                        if response_json['data']['PageDataList']:
+                                for i in response_json['data']['PageDataList']:
+                                        print('姓名:%s；电话:%s；会员卡号:%s' % (i['name'],i['mbl'],i['vipID']))
+                        else:
+                                print('没有会员')
                 except:
                         raise
         #根据卡面号查询会员
-        def test_select_vipcard_paging_cardface(self,headers,manage,menber_register_data):
+        def test_get_vipcard_paging_cardface(self,headers,manage,menber_register_data):
                 data={
                         "CpnID":"",    
                         "pageIndex":"1",      
                         "pageSize":"10",       
-                        "sort":"uptDtt desc",    
-                        "params":{
-                                "CrdID":"",     
-                                "CrdNo":"",
-                                "GstID":""
-                                }
+                        "sort":"uptDtt desc",   
+                        "CrdID":"",     
+                        "CrdNo":"",
+                        "GstID":""
                         }
                 try:
                         data['CpnID']=manage['CpnID']
-                        data['params']['CrdNo']=menber_register_data['crdFaceID']
-                        response=requests.post(url=manage['url'] % '/VipCrd/GetPageByParam',params=data,headers=headers)
+                        data['CrdNo']=menber_register_data['crdFaceID']
+                        response=requests.post(url=manage['url'] % '/VipCrd/GetPageByParam',data=data,headers=headers)
                         response_json=response.json()
                         assert response.status_code == 200
                         assert response_json['message'] =='获取数据成功'
+                        if response_json['data']['PageDataList']:
+                                for i in response_json['data']['PageDataList']:
+                                        print('姓名:%s；电话:%s；会员卡号:%s' % (i['name'],i['mbl'],i['vipID']))
+                        else:
+                                print('没有会员')
                 except:
                         raise
         #根据卡账号查询会员
-        def test_select_vipcard_paging_cardid(self,headers,manage,menber_register_data):
+        def test_get_vipcard_paging_cardid(self,headers,manage,menber_register_data):
                 data={
                         "CpnID":"",    
                         "pageIndex":"1",      
                         "pageSize":"10",       
-                        "sort":"uptDtt desc",    
-                        "param":{
-                                "CpnID":"",
-                                "CrdID":"",     
-                                "CrdNo":"",
-                                "GstID":""
-                                }
+                        "sort":"uptDtt desc",   
+                        "CrdID":"",     
+                        "CrdNo":"",
+                        "GstID":""
                         }
                 try:
                         data['CpnID']=manage['CpnID']
-                        data['param']['CrdID']=menber_register_data['crdID']
-                        response=requests.post(url=manage['url'] % '/VipCrd/GetPageByParam',params=data,headers=headers)
+                        data['CrdID']=menber_register_data['crdID']
+                        response=requests.post(url=manage['url'] % '/VipCrd/GetPageByParam',data=data,headers=headers)
                         response_json=response.json()
                         assert response.status_code == 200
                         assert response_json['message'] =='获取数据成功'
+                        if response_json['data']['PageDataList']:
+                                for i in response_json['data']['PageDataList']:
+                                        print('姓名:%s；电话:%s；会员卡号:%s' % (i['name'],i['mbl'],i['vipID']))
+                        else:
+                                print('没有会员')
                 except:
                         raise
 
@@ -421,7 +421,7 @@ class Test_parking():
 
         #添加停车场缴费规则
         def test_add_parking_rule(self,headers,manage,now_time,parking_page_data):
-                for i in range(1,5):
+                for i in range(1,random.choice(range(3,6))):
                         data={
                         "ID":"",
                         "CpnID":"",
@@ -460,7 +460,7 @@ class Test_parking():
                         except:
                                 raise
         #获取停车场缴费规则分页
-        def test_get_parking_rule_page(self,manage,headers,parking_page_data):
+        def test_get_parking_rule_page(self,headers,manage,parking_page_data):
                 data={
                         "CpnID":"",
                         "ParkID":"0",
@@ -483,11 +483,15 @@ class Test_parking():
                         comm_way.xlsx_write_way(4,test_data)
                         assert response.status_code == 200
                         assert response_json['message'] =='获取数据成功'
-                        print(response_json['message'])
+                        if response_json['data']['PageDataList']:
+                                for i in response_json['data']['PageDataList']:
+                                        print('序号:%s；停车场编号:%s；会员卡类型:%s' % (i['id'],i['parkID'],i['vipTpID']))
+                        else:
+                                print('没有停车场缴费规则')
                 except:
                         raise
         #获取停车场缴费规则单条
-        def test_get_parking_rule(self,manage,headers,parking_rule_page_data):
+        def test_get_parking_rule(self,headers,manage,parking_rule_page_data):
                 data={
                         "CpnID":"",
                         "id":"10"
@@ -497,54 +501,162 @@ class Test_parking():
                         data['id']=parking_rule_page_data['id']
                         response=requests.post(url=manage['url'] % '/Park/GetParkRuleSinger',data=data,headers=headers)
                         response_json=response.json()
-                        print(response_json)
                         assert response.status_code == 200
                         assert response_json['message'] =='获取成功'
-                        print(response_json['message'])
+                        print('序号：%s;停车场编号：%s;会员卡类型：%s' % (response_json['data']['Data']['id'],response_json['data']['Data']['parkID'],response_json['data']['Data']['vipTpID']))
+                except:
+                        raise
+        # 修改停车场缴费规则
+        def test_update_parking_rule(self,headers,manage,now_time,parking_rule_page_data,parking_data_random):
+                data={}
+                try:
+                        data['ID']=parking_rule_page_data['id']
+                        data['CpnID']=parking_rule_page_data['cpnID']
+                        data['SubID']=parking_rule_page_data['subID']
+                        data['ParkID']=parking_data_random['ParkID']
+                        data['VipTpID']='02'
+                        data['IsEv']=parking_rule_page_data['isEv']
+                        data['CalculaTyp']=parking_rule_page_data['calculaTyp']
+                        data['FreeMinute']=parking_rule_page_data['freeMinute']
+                        data['StartMinute']=parking_rule_page_data['startMinute']
+                        data['StartMoney']=parking_rule_page_data['startMoney']
+                        data['StartIntg']=parking_rule_page_data['startIntg']
+                        data['StartGold']=parking_rule_page_data['startGold']
+                        data['IntrvalTime']=parking_rule_page_data['intrvalTime']
+                        data['IntrvalMoney']=parking_rule_page_data['intrvalMoney']
+                        data['IntrvalIntg']=parking_rule_page_data['intrvalIntg']
+                        data['IntrvalGold']=parking_rule_page_data['intrvalGold']
+                        data['ConsumMoney']=parking_rule_page_data['consumMoney']
+                        data['ConsFreeMinute']=parking_rule_page_data['consFreeMinute']
+                        data['IntgSupportHour']=parking_rule_page_data['intgSupportHour']
+                        data['Uptr']=parking_rule_page_data['uptr']
+                        data['UptDtt']=now_time['ymd_hms']
+                        data['updateName']='ParkID'
+                        response=requests.post(url=manage['url'] % '/Park/UpdateParkRule',data=data,headers=headers)
+                        response_json=response.json()
+                        print(response_json)
+                        assert response.status_code == 200
+                        assert response_json['message'] =='修改成功'
                 except:
                         raise
 
 
+#系统配置表
+class Test_system_config():
+        def test_get_system_config_page(self,headers,manage):
+                data={
+                        "CpnID":"",
+                        "SubID":"",
+                        "Code":"",
+                        "PageIndex":"1",
+                        "PageSize":"10",
+                        "Sort":"id"
+                }
+                try:    
+                        data['CpnID']=manage['CpnID']
+                        data['SubID']=manage['SubID']
+                        response=requests.post(url=manage['url'] % '/SysPara/GetSysParaPage',data=data,headers=headers)
+                        response_json=response.json()
+                        global response_system_config
+                        response_system_config=response_json['data']['PageDataList']
+                        assert response.status_code == 200
+                        assert response_json['message'] =='获取数据成功'
+                        if response_system_config:
+                                for i in response_system_config:
+                                        print('id:%s；code:%s；name:%s；crtVl:%s' % (i['id'],i['code'],i['name'],i['crtVl']))
+                        else:
+                                print('没有系统配置')
+                except:
+                        raise
+        def test_update_system_config(self,headers,manage):
+                data=response_system_config[1]
+                try:
+                        data['crtVl']='66668888'
+                        data['updateProNames']='crtVl'  #修改字段
+                        response=requests.post(url=manage['url'] % '/SysPara/Update',data=data,headers=headers)
+                        response_json=response.json()
+                        print(response_json)
+                        assert response.status_code == 200
+                        assert response_json['message'] =='修改成功'                    
+                except:
+                        raise
+        def test_get_system_config_wifi_password(self,headers,manage):
+                data={}
+                try:
+                        data['id']=response_system_config[1]['id']
+                        response=requests.post(url=manage['url'] % '/SysPara/Get',data=data,headers=headers)
+                        response_json=response.json()
+                        assert response.status_code == 200
+                        assert response_json['message'] =='获取成功'
+                        print('id:%s；code:%s；name:%s；crtVl:%s' % (response_json['data']['Data']['id'],response_json['data']['Data']['code'],response_json['data']['Data']['name'],response_json['data']['Data']['crtVl']))
+                    
+                except:
+                        raise
+
                 
-# #签到规则
-# def test_signin_rule(headers,manage,now_time):
-#         data={
-#                 "ID":"0",
-#                 "CpnID":"",
-#                 "SubID":"",
-#                 "Typ ":"1",   #赠送类型[0-金币、1-积分]  
-#                 "Days ":"1",  #累积达到天数赠送 
-#                 "Integral ":"132",    #赠送值 
-#                 "LngValid ":"0",      #是否长期有效[0-是、1-否]
-#                 "StDt ":"",
-#                 "EdDt ":"",
-#                 "IsStop ":"0",        #是否终止[0-正常、1-终止]
-#                 "Brf ":"apitest",
-#                 "Uptr":"miscs3",
-#                 "UptDtt":"",
-#                 }
-#         try:    
-#                 data['CpnID']=manage['CpnID']
-#                 data['SubID']=manage['SubID']
-#                 data['StDt']=now_time['StDt']
-#                 data['EdDt']=now_time['EdDt']
-#                 data['UptDtt']=now_time['ymd_hms']
-#                 response=requests.post(url=manage['url'] % '/SignInRules/AddSignInRules',data=data,headers=headers)
-#                 response_json=response.json()
-#                 assert response.status_code == 200
-#                 assert response_json['message'] =='添加成功'
-#         except:
-#                 raise
+#添加签到规则
+def test_add_signin_rule(headers,manage,now_time):
+        data={
+                "ID":"0",
+                "CpnID":"",
+                "SubID":"",
+                "Typ":"1",   #赠送类型[0-金币、1-积分]  
+                "Days":"1",  #累积达到天数赠送 
+                "Integral":"20",    #赠送值 
+                "LngValid":"1",      #是否长期有效[0-是、1-否]
+                "StDt":"",
+                "EdDt":"",
+                "IsStop":"0",        #是否终止[0-正常、1-终止]
+                "Brf":"apitest",
+                "Uptr":"miscs3",
+                "UptDtt":"",
+                }
+        try:    
+                data['CpnID']=manage['CpnID']
+                data['SubID']=manage['SubID']
+                data['StDt']=now_time['StDt']
+                data['EdDt']=now_time['EdDt']
+                data['UptDtt']=now_time['ymd_hms']
+                print(data)
+                response=requests.post(url=manage['url'] % '/SignInRules/AddSignInRules',data=data,headers=headers)
+                response_json=response.json()
+                print(response_json)
+                assert response.status_code == 200
+                assert response_json['Message'] =='添加成功'
+        except:
+                raise
 
 
 
 
+#获取签到规则分页
+def test_get_signin_rule_page(headers,manage):
+        data={
+                "CpnID":"",
+                "SubID":"",
+                "PgIndex":"1",
+                "PgSize":"10",
+                "Typ":"1",      #赠送类型[0-金币、1-积分]  
+                "Days":"",      #累积达到天数赠送
+                "Integral":"",  #赠送值 
+                "LngValid":"1", #是否长期有效[0-是、1-否]
+                "StDt":"",
+                "EdDt":"",
+                "IsStop":"0"    #是否终止[0-正常、1-终止]
+                }
+        try:    
+                data['CpnID']=manage['CpnID']
+                data['SubID']=manage['SubID']
+                print(data)
+                response=requests.post(url=manage['url'] % '/SignInRules/GetWhereSignInRules',data=data,headers=headers)
+                response_json=response.json()
+                print(response_json)
+                assert response.status_code == 200
+        except:
+                raise
 
 
-
-
-
-
+    
 
 
 

@@ -58,7 +58,6 @@ def test_menber_register(headers,menber,menber_data_random):
                 data['Brth'] = menber_data_random['Brth']
                 response=requests.post(url=menber['url'] % '/Guest/Register',data=data,headers=headers)
                 response_json=response.json()
-                print(response_json)
                 assert response.status_code == 200
                 assert response_json['message'] =='注册成功'
                 if response_json['data']['Data']:
@@ -103,47 +102,7 @@ def test_get_index_menber_data(headers,menber,menber_register_data):
                 raise
 
         
-#获取某个会员积分明细
-def test_select_integral(headers,menber,menber_register_data):  
-        data = {
-                 "CpnID":"",
-                 "crdNo":"",
-                 "pageIndex":"1",
-                 "pageSize":"10",
-                 "sort":"1",
-                }
-        try:
-                data['CpnID'] = menber['CpnID']
-                data['crdNo'] = menber_register_data['crdFaceID']
-                response=requests.post(url=menber['url'] % '/IntgAct/GetIntgActPage',data=data,headers=headers)
-                response_json=response.json()
-                assert response.status_code == 200
-                assert response_json['message'] =='获取数据成功'
-                if response_json['data']['PageDataList']:
-                        for i in response_json['data']['PageDataList']:
-                                print('时间：%s' % i['uptDtt'])
-                                print('积分：%s' % i['intgAmt'])
-                else:
-                        print('没有积分明细')
-        except:
-                raise
 
-#查询某个会员总积分
-def test_select_menber_sum_integral(headers,menber,menber_register_data):  
-        data={
-                "CpnID":"",
-                "crdNo":""
-        }
-        try:
-                data['CpnID'] = menber['CpnID']
-                data['crdNo'] =menber_register_data['crdFaceID']
-                response=requests.post(url=menber['url'] % '/Intg/GetIntgSum',data=data,headers=headers)
-                response_json=response.json()
-                print('会员总积分：%s'% response_json['data']['SumIntg'])
-                assert response.status_code == 200
-                assert response_json['message'] =='数据更新成功'
-        except :
-                raise
 
 #获取某个会员的全部卡
 def test_select_menber_allcard(headers,menber,menber_register_data):  
@@ -238,6 +197,7 @@ class Test_sign_in():
                         response_json=response.json()
                         assert response.status_code == 200
                         assert response_json['message'] =='签到成功'
+                        print(response_json['message'])
                 except:
                         raise
         #获取签到记录
@@ -264,6 +224,70 @@ class Test_sign_in():
                                 print('没有签到记录')
                 except:
                         raise
+
+#获取某个会员积分明细
+def test_select_integral(headers,menber,menber_register_data):  
+        data = {
+                 "CpnID":"",
+                 "crdNo":"",
+                 "pageIndex":"1",
+                 "pageSize":"10",
+                 "sort":"1",
+                }
+        try:
+                data['CpnID'] = menber['CpnID']
+                data['crdNo'] = menber_register_data['crdFaceID']
+                response=requests.post(url=menber['url'] % '/IntgAct/GetIntgActPage',data=data,headers=headers)
+                response_json=response.json()
+                assert response.status_code == 200
+                assert response_json['message'] =='获取数据成功'
+                if response_json['data']['PageDataList']:
+                        for i in response_json['data']['PageDataList']:
+                                print('时间：%s' % i['uptDtt'])
+                                print('积分：%s' % i['intgAmt'])
+                else:
+                        print('没有积分明细')
+        except:
+                raise
+
+#查询某个会员总积分
+def test_select_menber_sum_integral(headers,menber,menber_register_data):  
+        data={
+                "CpnID":"",
+                "crdNo":""
+        }
+        try:
+                data['CpnID'] = menber['CpnID']
+                data['crdNo'] =menber_register_data['crdFaceID']
+                response=requests.post(url=menber['url'] % '/Intg/GetIntgSum',data=data,headers=headers)
+                response_json=response.json()
+                assert response.status_code == 200
+                assert response_json['message'] =='数据更新成功'
+                print('会员总积分：%s'% response_json['data']['SumIntg'])
+        except :
+                raise
+
+
+
+
+#获取wifi密码
+def test_get_wifi_password(headers,menber):
+        data={}
+        try:
+                data['CpnID'] = menber['CpnID']
+                data['SubID'] = menber['SubID']
+                response=requests.post(url=menber['url'] % '/Guest/GetWiFi',data=data,headers=headers)
+                response_json=response.json()
+                assert response.status_code == 200
+                if response_json:
+                        for i in response_json:
+                                print('id:%s；code:%s；name:%s；crtVl:%s;' % (i['id'],i['code'],i['name'],i['crtVl']))
+                else:
+                        print('没有wifi信息')
+        except :
+                raise
+
+
 
 #会员解绑
 def test_menber_untie(headers,menber):

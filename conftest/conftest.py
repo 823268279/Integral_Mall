@@ -24,7 +24,7 @@ def pytest_html_results_summary(prefix):
 
 
 
-#获取headers
+#获取请求头
 @pytest.fixture(scope='session')    
 def headers():
     url='http://api.newcrm.group.weixin.wuerp.com/api/v1.0/Token/Get'
@@ -37,12 +37,24 @@ def headers():
         response_json=response.json()
         assert response.status_code == 200
         assert response_json['message'] =='获取授权成功'
+        print(response_json['message'])
         headers={}
         headers['Authorization']=response_json['data']['Data']['token']
         return headers
     except:
         raise
-    
+
+#获取验证码
+@pytest.fixture(scope='session')   
+def phone_code():
+    response=requests.post('http://api.newcrm.group.weixin.wuerp.com/manage/v1.0/User/GetCode')
+    response_json=response.json()
+    auth_code = response_json['data']['Data']
+    assert response.status_code == 200
+    assert response_json['success'] == True
+    print(response_json['message'])
+    return auth_code
+#phone端的配置    
 @pytest.fixture(scope='session')    
 def menber():
     data={
@@ -52,9 +64,12 @@ def menber():
         }
     return data
 
+#web端的配置
 @pytest.fixture(scope='session')   
 def manage():
     data={
+        "username":"miscs3",
+        "password":"111111",
         "CpnID":'0001',
         "SubID":'3378049226@qq.com',
         "url":'http://api.newcrm.group.weixin.wuerp.com/manage/v1.0%s'
@@ -108,6 +123,13 @@ def menber_data_random():
     return data
 
 
+#读取excel
+def xlsx_read_way():
+    __file__ = r'../test_data/2020-05-09-09-27_test_data.xlsx'
+    workbook=load_workbook(__file__)
+    worksheet=workbook['Sheet1']
+    return worksheet
+
 
 #随机停车场信息
 @pytest.fixture(scope='function')   
@@ -122,27 +144,18 @@ def parking_data_random():
 
 #获取会员手机注册数据
 @pytest.fixture(scope='session')    
-def menber_register_data():
-    __file__ = r'../test_data/2020-05-09-09-27_test_data.xlsx'
-    workbook=load_workbook(__file__)
-    worksheet=workbook['Sheet1']
-    response_menber_register=eval(worksheet.cell(2,6).value,{"true":"0","false":"0"})['data']['Data'][0]
+def menber_register_data(): 
+    response_menber_register=eval(xlsx_read_way().cell(2,6).value,{"true":"0","false":"0"})['data']['Data'][0]
     return response_menber_register
 
 #获取停车场分页
 @pytest.fixture(scope='session')    
 def parking_page_data():
-    __file__ = r'../test_data/2020-05-09-09-27_test_data.xlsx'
-    workbook=load_workbook(__file__)
-    worksheet=workbook['Sheet1']
-    response_parking_page=eval(worksheet.cell(3,6).value,{"true":"0","false":"0"})['data']['PageDataList'][0]
+    response_parking_page=eval(xlsx_read_way().cell(3,6).value,{"true":"0","false":"0"})['data']['PageDataList'][0]
     return response_parking_page
 
 #获取停车场缴费规则分页
 @pytest.fixture(scope='session')    
 def parking_rule_page_data():
-    __file__ = r'../test_data/2020-05-09-09-27_test_data.xlsx'
-    workbook=load_workbook(__file__)
-    worksheet=workbook['Sheet1']
-    response_parking_rule_page=eval(worksheet.cell(4,6).value,{"true":"0","false":"0"})['data']['PageDataList'][0]
+    response_parking_rule_page=eval(xlsx_read_way().cell(4,6).value,{"true":"0","false":"0"})['data']['PageDataList'][0]
     return response_parking_rule_page
