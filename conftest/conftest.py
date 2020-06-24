@@ -54,6 +54,7 @@ def phone_code():
     assert response_json['success'] == True
     print(response_json['message'])
     return auth_code
+
 #phone端的配置    
 @pytest.fixture(scope='session')    
 def menber():
@@ -130,6 +131,12 @@ def xlsx_read_way():
     worksheet=workbook['Sheet1']
     return worksheet
 
+#读取图片
+@pytest.fixture(scope='session')  
+def get_pictrue():
+    data={}
+    data['ticket']={'file': open('../img/ticket_one.jpg', 'rb')}
+    return data
 
 #随机停车场信息
 @pytest.fixture(scope='function')   

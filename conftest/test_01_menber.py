@@ -131,7 +131,7 @@ def test_select_menber_allcard(headers,menber,menber_register_data):
 #根据卡账户获取单张卡
 def test_select_only_card(headers,menber,menber_register_data):
         data={
-                "CpnID":"0001",
+                "CpnID":"",
                 "crdID":"",
                 }
         try:
@@ -139,6 +139,7 @@ def test_select_only_card(headers,menber,menber_register_data):
                 data['crdID'] = menber_register_data['crdID']
                 response=requests.post(url=menber['url'] % '/VipCrd/GetByCrdID',data=data,headers=headers)
                 response_json=response.json()
+                print(response_json)
                 assert response.status_code == 200
                 assert response_json['message'] =='获取数据成功'
                 print('会员卡号：%s' % response_json['data']['Data']['vipID'])
@@ -291,11 +292,7 @@ def test_get_wifi_password(headers,menber):
 
 #会员解绑
 def test_menber_untie(headers,menber):
-        data={
-                "CpnID":"",
-                "SubID":"",
-                "Tel":""
-                }
+        data={}
         try:
                 data['CpnID'] = menber['CpnID']
                 data['SubID'] = menber['SubID']
@@ -310,9 +307,35 @@ def test_menber_untie(headers,menber):
 
 
 
+#上传小票到s3
+def test_upload_ticket_s3(headers,menber,get_pictrue):   
+        data={}
+        try:
+                data['CpnID'] = menber['CpnID']
+                response=requests.post(url=menber['url'] % '/Guest/UnloadPic',files=get_pictrue['ticket'],data=data,headers=headers)
+                response_json=response.json()
+                print(response_json)
+                assert response.status_code == 200
+                assert response_json['message'] =='上传成功'
+        except:
+                raise
 
 
-
+#上传小票
+def test_upload_ticket(headers,menber):
+        data={}
+        try:
+                data['CpnID'] = menber['CpnID']
+                data['SubID'] = menber['SubID']
+                data['OpenID'] = menber['CpnID']
+                data['ImgURL'] = 'https://s3.cn-north-1.amazonaws.com.cn/wechatcard.test.system/0001/Image/Gst/202006/20200623041659393404592.jpg'
+                response=requests.post(url=menber['url'] % '/BllImg/UploadUsrBllImg',data=data,headers=headers)
+                response_json=response.json()
+                print(response_json)
+                assert response.status_code == 200
+                # assert response_json['message'] =='上传成功'
+        except:
+                raise
 
 
 

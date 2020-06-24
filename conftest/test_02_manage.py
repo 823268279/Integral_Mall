@@ -77,13 +77,14 @@ class Test_select_vipdata():
                         }
                 try:
                         data['CpnID']=manage['CpnID']
+                        data['SubID']=manage['SubID']
                         response=requests.post(url=manage['url'] % '/Gst/GetGstPage',data=data,headers=headers)
                         response_json=response.json()
                         assert response.status_code == 200
                         assert response_json['message'] == "获取数据成功"
                         if response_json['data']['PageDataList']:
                                 for i in response_json['data']['PageDataList']:
-                                        print('会员编号：%s;会员电话：%s;会员卡号：%s' % (i['id'],i['tel'],i['vipID']))
+                                        print('会员编号：%s;会员姓名：%s;会员电话：%s;会员卡号：%s' % (i['id'],i['name'],i['tel'],i['vipID']))
                         else:
                                 print('没有会员')
                 except:
@@ -92,9 +93,10 @@ class Test_select_vipdata():
         def test_select_menber_data_page_vipid(self,headers,manage,menber_register_data):
                 data={
                         "CpnID":"",
+                        "SubID":"",
                         "pageIndex":"1",
                         "pageSize":"10",
-                        "sort":"id desc",
+                        "sort":"uptDtt desc",
                         "Name":"",#查询条件
                         "VipID":"",
                         "CrdID":"",
@@ -103,14 +105,46 @@ class Test_select_vipdata():
                         }
                 try:
                         data['CpnID']=manage['CpnID']
+                        data['SubID']=manage['SubID']
                         data['VipID']=menber_register_data['crdFaceID']
                         response=requests.post(url=manage['url'] % '/Gst/GetGstPage',data=data,headers=headers)
                         response_json=response.json()
                         assert response.status_code == 200
-                        assert response_json['message'] == "获取数据成功"
+                        assert response_json['message'] == "获取数据成功" 
                         if response_json['data']['PageDataList']:
                                 for i in response_json['data']['PageDataList']:
-                                        print('会员编号：%s;会员电话：%s;会员卡号：%s' % (i['id'],i['tel'],i['vipID']))
+                                        print('会员编号：%s;会员姓名：%s;会员电话：%s;会员卡号：%s' % (i['id'],i['name'],i['tel'],i['vipID']))
+                        else:
+                                print('没有会员')
+                except:
+                        raise
+        #根据会员卡账号查询会员数据
+        def test_select_menber_data_page_cardid(self,headers,manage,menber_register_data):
+                data={
+                        "CpnID":"",
+                        "SubID":"",
+                        "pageIndex":"1",
+                        "pageSize":"10",
+                        "sort":"uptDtt desc",
+                        "Name":"",#查询条件
+                        "VipID":"",
+                        "CrdID":"",
+                        "CrdNo":"",
+                        "Stt":""
+                        }
+                try:
+                        data['CpnID']=manage['CpnID']
+                        data['SubID']=manage['SubID']
+                        data['CrdNo']=menber_register_data['crdID']
+                        print(data)
+                        response=requests.post(url=manage['url'] % '/Gst/GetGstPage',data=data,headers=headers)
+                        response_json=response.json()
+                        print(response_json)
+                        assert response.status_code == 200
+                        assert response_json['message'] == "获取数据成功" 
+                        if response_json['data']['PageDataList']:
+                                for i in response_json['data']['PageDataList']:
+                                        print('会员编号：%s;会员姓名：%s;会员电话：%s;会员卡号：%s' % (i['id'],i['name'],i['tel'],i['vipID']))
                         else:
                                 print('没有会员')
                 except:
