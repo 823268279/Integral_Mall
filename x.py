@@ -17,10 +17,26 @@
 #     print(flow.repsonse.cookies)        #响应cookies
 #     print(flow.response.text)           #响应内容
 
+from locust import User, TaskSet, between, task, events
 
-__file__ = r'./img/ticket_one.jpg'
-file=open(__file__,'rb')
-file.read()
-file.close()
 
-print(file)
+@events.test_start.add_listener
+def on_test_start(**kwargs):
+    print("A new test is starting")
+
+@events.test_stop.add_listener
+def on_test_stop(**kwargs):
+    print("A new test is ending")
+
+class ForumSection(TaskSet):
+    
+
+    @task(1)
+    def create_thread(self):
+        print('dadsdsadaaaaaaaaaaaaaaaaaaa')
+
+
+
+class LoggedInUser(User):
+    tasks = {ForumSection:2}
+    wait_time = between(3, 5)

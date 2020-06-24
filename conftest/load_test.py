@@ -1,42 +1,46 @@
 import requests
-from locust import HttpLocust,task,TaskSet
-import xmltodict
-import dicttoxml
 import json
-class Menber_select(TaskSet):
-    def on_start(self):
-        url='http://api.newcrm.group.weixin.wuerp.com/api/v1.0/Token/Get'
-        data={
-                "id":"wx5f1e0495dc540bb1",
-                "key":"7947ff3cbf06647f312e4e6ec5e32943"
-                }
-        response=requests.post(url=url,data=data)
-        response_json=response.json()
-        #响应断言
-        assert response.status_code == 200
-        assert response_json['message'] =='获取授权成功'
-        self.headers={}
-        self.headers['Authorization']=response_json['data']['Data']['token']
+from locust import HttpUser, TaskSet, between, task, events
+
+
+@events.test_start.add_listener
+def on_test_start(**kwargs):
+    url='http://api.newcrm.group.weixin.wuerp.com/api/v1.0/Token/Get'
+    data={
+    "id":"m1234567",
+    "key":"7947ff3cbf06647f312e4e6ec5e32943"
+    }
+    response = requests.post(url=url,data=data)
+    response_json=response.json()
+    #响应断言
+    assert response.status_code == 200
+    assert response_json['message'] =='获取授权成功'
+    global headers
+    headers={}
+    headers['Authorization']=response_json['data']['Data']['token']
+
+
+
+class ForumSection(TaskSet):
 
 
 
 
     @task(1)
-    def test(self):
-        pass
+    def get_menber_data(self):
         data={
                 "CpnID":"0001",
                 "subID":"3378049226@qq.com",
                 "gstID":"96"}
-        response = self.client.post(url="/Guest/GetMainGst",data=data,headers=self.headers) 
-        print(response.json())
+        response = self.client.post(url="/Guest/GetMainGst",data=data,headers=headers) 
+        response_json=response.json()
         #响应断言
         assert response.status_code == 200
+        assert response_json['message'] == '获取成功'
 
-class Config(HttpLocust):
-    task_set = Menber_select
-    min_wait = 3000
-    max_wait = 6000
+
+
+class LoggedInUser(HttpUser):
+    tasks = {ForumSection:2}
+    wait_time = between(3, 5)
     host='http://api.newcrm.group.weixin.wuerp.com/member/v1.0'
-
-
