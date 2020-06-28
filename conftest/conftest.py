@@ -148,12 +148,28 @@ def parking_data_random():
     data['Tel']='13%s%s' % (sum(random.sample(range(10000,100000),1)),sum(random.sample(range(1000,10000),1)))
     return data
 
+#随机车辆信息
+@pytest.fixture(scope='function') 
+def car_data_random():
+    b = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
+    data={}
+    #车辆编号
+    data['CarID']='川Y.%s%s%s'% (random.choice(b),random.choice(b),sum(random.sample(range(300),3)))
+    return data
 
-#获取会员手机注册数据
+
+#获取会员手机注册响应数据
 @pytest.fixture(scope='session')    
-def menber_register_data(): 
+def menber_register_response_data(): 
     response_menber_register=eval(xlsx_read_way().cell(2,6).value,{"true":"0","false":"0"})['data']['Data'][0]
     return response_menber_register
+
+#获取会员手机注册请求数据
+@pytest.fixture(scope='session')
+def menber_register_request_data():
+    request_menber_register=eval(xlsx_read_way().cell(2,5).value,{"true":"0","false":"0"})
+    return request_menber_register
+
 
 #获取停车场分页
 @pytest.fixture(scope='session')    
@@ -166,3 +182,9 @@ def parking_page_data():
 def parking_rule_page_data():
     response_parking_rule_page=eval(xlsx_read_way().cell(4,6).value,{"true":"0","false":"0"})['data']['PageDataList'][0]
     return response_parking_rule_page
+
+#获取上传小票到s3的响应
+@pytest.fixture(scope='session')    
+def upload_ticked_response_data():
+    upload_ticked_response_data=eval(xlsx_read_way().cell(5,6).value,{"true":"0","false":"0"})['data']
+    return upload_ticked_response_data
