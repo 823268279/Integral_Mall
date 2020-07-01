@@ -25,30 +25,7 @@ comm_way=Way()
 
 #会员注册   
 def test_menber_register(headers,menber,menber_data_random):
-        data={
-                "CpnID":"",
-                "SubID":"",
-                "OpnID":"",
-                "SMSCode":"0000",#验证码
-                "Name":"",
-                "OrgID":"",
-                "IDSource":"100",
-                "UserSource":"",
-                "Tel":"",
-                "Eml":"",
-                "IDntTp":"",
-                "IDntNmb":"",
-                "Brth":"",
-                "Sex":"1",
-                "Prvc":"",
-                "City":"",
-                "Addr":"",
-                "UnionID":"",
-                "JsCode":"",
-                "EmployeeNumber":"",
-                "AppID":"",
-                "AppSecret":""
-                }
+        data={}
         try:
                 data['CpnID'] = menber['CpnID']
                 data['SubID'] = menber['SubID']
@@ -56,24 +33,36 @@ def test_menber_register(headers,menber,menber_data_random):
                 data['Name'] = menber_data_random['Name']
                 data['Tel'] = menber_data_random['Tel']
                 data['Brth'] = menber_data_random['Brth']
+                data['SMSCode'] = '0000'
+                data['OrgID'] = ''
+                data['IDSource'] = '100'
+                data['UserSource'] = ''
+                data['Eml'] = ''
+                data['IDntTp'] = ''
+                data['IDntNmb'] = ''
+                data['Sex'] = '1'
+                data['Prvc'] = ''
+                data['City'] = ''
+                data['Addr'] = ''
+                data['UnionID'] = ''
+                data['JsCode'] = ''
+                data['EmployeeNumber'] = ''
+                data['AppID'] = ''
+                data['AppSecret'] = ''
+                # mysql insert request data
+                comm_way.sql_insert('register_request',data)
                 response=requests.post(url=menber['url'] % '/Guest/Register',data=data,headers=headers)
                 response_json=response.json()
                 assert response.status_code == 200
                 assert response_json['message'] =='注册成功'
+                # mysql insert response data
+                comm_way.sql_insert('register_response',response_json['data']['Data'][0])
                 print(response_json['message'])
                 if response_json['data']['Data']:
                         for i in response_json['data']['Data']:
                                 print('opnID:%s；tel:%s；crdFaceID:%s；crdID:%s；'% (i['opnID'],i['tel'],i['crdFaceID'],i['crdID']))
                 else:
                         print('没有会员')
-                #写入响应数据
-                test_data=["test_case","request_way","request_url","request_body","response_body"]
-                test_data[0]="会员注册"
-                test_data[1]="POST"
-                test_data[2]=str(response.url)
-                test_data[3]=str(data)
-                test_data[4]=str(response_json)
-                comm_way.xlsx_write_way(2,test_data)
         except:
                 raise
 
@@ -82,14 +71,12 @@ def test_menber_register(headers,menber,menber_data_random):
 class Test_dynamic_code():
         #生成会员动态码
         def test_create_dynamic_code(self,headers,menber,menber_register_response_data):
-                data={"CpnID":"0001",   
-                        "Code":"",      #卡账号/券账号
-                        "Tp":"0",        #帐号类型 0-会员卡、1-优惠券
-                        "expires":"5"}   #动态码过期时间(分钟)
+                data={}   
                 try:
                         data['CpnID'] = menber['CpnID']
-                        data['Code'] = menber_register_response_data['crdID']
-                        data['Tp']=0
+                        data['Code'] = menber_register_response_data['crdID']   #卡账号/券账号
+                        data['Tp']=0    #帐号类型 0-会员卡、1-优惠券
+                        data['expires']=5       #动态码过期时间(分钟)
                         response=requests.post(url=menber['url'] % '/DynamicCode/GetDynamicCode',data=data,headers=headers)
                         response_json=response.json()
                         global response_menber_dynamic_code
@@ -103,9 +90,9 @@ class Test_dynamic_code():
 
         #根据动态码获取会员卡
         def test_check_dynamic_code(self,headers,menber):
-                data={"DynamicCode":""} #动态码
+                data={} 
                 try:
-                        data['DynamicCode']=response_menber_dynamic_code['dynamicCode']
+                        data['DynamicCode']=response_menber_dynamic_code['dynamicCode'] #动态码
                         response=requests.post(url=menber['url'] % '/DynamicCode/QueryDynamicCode',data=data,headers=headers)
                         response_json=response.json()
                         assert response.status_code == 200
@@ -116,20 +103,17 @@ class Test_dynamic_code():
 class Test_sign_in():
         #签到
         def test_signin(self,headers,menber,menber_register_response_data):
-                data={
-                        "CpnID":"",
-                        "SubID":"",
-                        "GstID":"",
-                        "VipID":"",
-                        "Brf":"apitest"
-                        }
+                data={}
                 try:
                         data['CpnID'] = menber['CpnID']
                         data['SubID'] = menber['SubID']
-                        data['GstID']=menber_register_response_data['gstID']
-                        data['VipID']=menber_register_response_data['crdFaceID']
+                        data['GstID'] = menber_register_response_data['gstID']
+                        data['VipID'] = menber_register_response_data['crdFaceID']
+                        data['Brf'] = "apitest"
+                        print(data)
                         response=requests.post(url=menber['url'] % '/SignIn/SignIn',data=data,headers=headers)
                         response_json=response.json()
+                        print(response_json)
                         assert response.status_code == 200
                         assert response_json['message'] =='签到成功'
                         print(response_json['message'])
@@ -137,19 +121,16 @@ class Test_sign_in():
                         raise
         #获取签到记录
         def test_signin_record(self,headers,menber,menber_register_response_data,now_time):
-                data={
-                        "CpnID":"",
-                        "SubID":"",
-                        "gstid":"",
-                        "EndTime":""
-                        }
+                data={}
                 try:
                         data['CpnID'] = menber['CpnID']
                         data['SubID'] = menber['SubID']
-                        data['gstid']=menber_register_response_data['gstID']
-                        data['EndTime']=now_time['ymd_hms']
+                        data['gstid'] = menber_register_response_data['gstID']
+                        data['EndTime'] = now_time['ymd_hms']
+                        print(data)
                         response=requests.post(url=menber['url'] % '/SignIn/GetSign',data=data,headers=headers)
                         response_json=response.json()
+                        print(response_json)
                         assert response.status_code == 200
                         if response_json['data']['Data']:
                                 for i in response_json['data']['Data']:
@@ -181,11 +162,7 @@ class Test_index_menber_data():
 
         #获取某个会员的全部卡
         def test_select_menber_allcard(self,headers,menber,menber_register_response_data):  
-                data={
-                        "CpnID":"",
-                        "SubID":"",
-                        "opnID":"",
-                        }
+                data={}
                 try:
                         data['CpnID'] = menber['CpnID']
                         data['SubID'] = menber['SubID']
@@ -219,16 +196,13 @@ class Test_index_menber_data():
 
         #获取某个会员积分明细
         def test_select_integral(self,headers,menber,menber_register_response_data):  
-                data = {
-                        "CpnID":"",
-                        "crdNo":"",
-                        "pageIndex":"1",
-                        "pageSize":"10",
-                        "sort":"1",
-                        }
+                data = {}
                 try:
                         data['CpnID'] = menber['CpnID']
-                        data['crdNo'] = menber_register_response_data['crdFaceID']
+                        data['vipID'] = menber_register_response_data['crdFaceID']
+                        data['pageIndex'] = 1
+                        data['pageSize'] = 10
+                        data['sort'] = "uptDtt desc"
                         response=requests.post(url=menber['url'] % '/IntgAct/GetIntgActPage',data=data,headers=headers)
                         response_json=response.json()
                         assert response.status_code == 200
@@ -243,13 +217,10 @@ class Test_index_menber_data():
 
         #查询某个会员总积分
         def test_select_menber_sum_integral(self,headers,menber,menber_register_response_data):  
-                data={
-                        "CpnID":"",
-                        "crdNo":""
-                }
+                data={}
                 try:
                         data['CpnID'] = menber['CpnID']
-                        data['crdNo'] =menber_register_response_data['crdFaceID']
+                        data['vipID'] =menber_register_response_data['crdFaceID']
                         response=requests.post(url=menber['url'] % '/Intg/GetIntgSum',data=data,headers=headers)
                         response_json=response.json()
                         assert response.status_code == 200
@@ -304,15 +275,9 @@ class Test_upload_ticked():
                         response_json=response.json()
                         assert response.status_code == 200
                         assert response_json['message'] =='上传成功'
+                        # mysql insert response data
+                        comm_way.sql_insert('upload_ticket',response_json['data'])
                         print(response_json['message'])
-                        #写入响应数据
-                        test_data=["test_case","request_way","request_url","request_body","response_body"]
-                        test_data[0]="上传小票到s3"
-                        test_data[1]="POST"
-                        test_data[2]=str(response.url)
-                        test_data[3]=str(data)
-                        test_data[4]=str(response_json)
-                        comm_way.xlsx_write_way(5,test_data)
                 except:
                         raise
                 
@@ -355,29 +320,30 @@ class Test_upload_ticked():
                         raise
 
 
-class Test_car():
-        def test_add_car_data(self,headers,menber,menber_register_response_data,car_data_random):
-                data={}
-                try:
-                        data['CpnID'] = menber['CpnID']
-                        # data['SubID'] = menber['SubID']
-                        data['GstID'] = menber_register_response_data['gstID']
-                        data['CarID'] = car_data_random['CarID'] #车牌号
-                        data['CarTp'] = '敞篷超跑'
-                        data['IsEv'] = 0  #是否新能源
-                        data['IsSupIntgAuto'] = 1 #是否支持自动积分
-                        data['Stt'] = 0
-                        data['Brf'] = 'apitest'
-                        data['OldCarID']=''
-                        print(data)
-                        response=requests.post(url=menber['url'] % '/GstCar/AddGstCar',data=data,headers=headers)
-                        response_json=response.json()
-                        print(response_json)
-                        assert response.status_code == 200
-                        assert response_json['message'] =='添加成功'
-                        print(response_json['message'])
-                except:
-                        raise
+# class Test_car():
+#         # 添加会员车辆信息
+#         def test_add_car_data(self,headers,menber,menber_register_response_data,car_data_random):
+#                 data={}
+#                 try:
+#                         data['CpnID'] = menber['CpnID']
+#                         # data['SubID'] = menber['SubID']
+#                         data['GstID'] = menber_register_response_data['gstID']
+#                         data['CarID'] = car_data_random['CarID'] #车牌号
+#                         data['CarTp'] = '敞篷超跑'
+#                         data['IsEv'] = 0  #是否新能源
+#                         data['IsSupIntgAuto'] = 1 #是否支持自动积分
+#                         data['Stt'] = 0
+#                         data['Brf'] = 'apitest'
+#                         data['OldCarID']=''
+#                         print(data)
+#                         response=requests.post(url=menber['url'] % '/GstCar/AddGstCar',data=data,headers=headers)
+#                         response_json=response.json()
+#                         print(response_json)
+#                         assert response.status_code == 200
+#                         assert response_json['message'] =='添加成功'
+#                         print(response_json['message'])
+#                 except:
+#                         raise
 
 
 

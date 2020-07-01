@@ -12,6 +12,10 @@ import requests
 import json
 import random
 
+from comm.comm_way import Way#公共方法
+comm_way=Way()
+
+
 # 添加接口地址与项目名称
 def pytest_configure(config):
     config._metadata["项目名称"] = "NEW_CRM_v1.0"
@@ -161,30 +165,32 @@ def car_data_random():
 #获取会员手机注册响应数据
 @pytest.fixture(scope='session')    
 def menber_register_response_data(): 
-    response_menber_register=eval(xlsx_read_way().cell(2,6).value,{"true":"0","false":"0"})['data']['Data'][0]
-    return response_menber_register
+    return comm_way.sql_select('register_response')
+
+
 
 #获取会员手机注册请求数据
 @pytest.fixture(scope='session')
 def menber_register_request_data():
-    request_menber_register=eval(xlsx_read_way().cell(2,5).value,{"true":"0","false":"0"})
-    return request_menber_register
+    return comm_way.sql_select('register_request')
 
 
 #获取停车场分页
 @pytest.fixture(scope='session')    
 def parking_page_data():
-    response_parking_page=eval(xlsx_read_way().cell(3,6).value,{"true":"0","false":"0"})['data']['PageDataList'][0]
-    return response_parking_page
+    return comm_way.sql_select('parking_response')
 
 #获取停车场缴费规则分页
 @pytest.fixture(scope='session')    
 def parking_rule_page_data():
-    response_parking_rule_page=eval(xlsx_read_way().cell(4,6).value,{"true":"0","false":"0"})['data']['PageDataList'][0]
-    return response_parking_rule_page
+    return comm_way.sql_select('parking_rule_response')
 
-#获取上传小票到s3的响应
+#获取上传小票到s3的小票链接
 @pytest.fixture(scope='session')    
 def upload_ticked_response_data():
-    upload_ticked_response_data=eval(xlsx_read_way().cell(5,6).value,{"true":"0","false":"0"})['data']
-    return upload_ticked_response_data
+    return comm_way.sql_select('upload_ticket')
+
+
+
+
+
