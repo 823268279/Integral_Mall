@@ -155,42 +155,53 @@ def parking_data_random():
 #随机车辆信息
 @pytest.fixture(scope='function') 
 def car_data_random():
+    a = ['法拉利','兰博基尼','大众','丰田','马自达','别克','雪佛兰','福特','标志','现代','奔驰','奥迪','宝马','比亚迪']
     b = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
     data={}
     #车辆编号
-    data['CarID']='川Y.%s%s%s'% (random.choice(b),random.choice(b),sum(random.sample(range(300),3)))
+    data['CarID'] = '川Y.%s%s%s'% (random.choice(b),random.choice(b),sum(random.sample(range(300),3)))
+    data['carTp'] = random.choice(a)
     return data
 
 
-#获取会员手机注册响应数据
-@pytest.fixture(scope='session')    
-def menber_register_response_data(): 
-    return comm_way.sql_select('register_response')
 
-
-
-#获取会员手机注册请求数据
+# mysql select table：register_request
 @pytest.fixture(scope='session')
 def menber_register_request_data():
     return comm_way.sql_select('register_request')
 
 
-#获取停车场分页
+# mysql select table： register_response
+@pytest.fixture(scope='session')    
+def menber_register_response_data(): 
+    return comm_way.sql_select('register_response')
+
+
+# mysql select table： menber_data_response
+@pytest.fixture(scope='session')
+def menber_data():
+    return comm_way.sql_select('menber_data_response')
+
+    
+# mysql select table： parking_response
 @pytest.fixture(scope='session')    
 def parking_page_data():
     return comm_way.sql_select('parking_response')
 
-#获取停车场缴费规则分页
+# mysql select table： parking_rule_response
 @pytest.fixture(scope='session')    
 def parking_rule_page_data():
     return comm_way.sql_select('parking_rule_response')
 
-#获取上传小票到s3的小票链接
+# mysql select table： upload_ticket_response
 @pytest.fixture(scope='session')    
-def upload_ticked_response_data():
-    return comm_way.sql_select('upload_ticket')
+def upload_ticket_response_data():
+    return comm_way.sql_select('upload_ticket_response')
 
-
+# mysql select table: car_data_response
+@pytest.fixture(scope='session')    
+def car_data_response_data():
+    return comm_way.sql_select('car_data_response')
 
 
 

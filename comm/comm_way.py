@@ -172,6 +172,6 @@ class Smtp():
         server.sendmail(user,[user_to],msg.as_string())
         server.quit()
 
-# # Way().sql_select('upload_ticket')
+# Way().sql_select('upload_ticket')
 # z=Way().sql_select('register_response')
 # print(z)

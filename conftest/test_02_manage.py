@@ -60,8 +60,6 @@ class Test_select_vipdata():
                         data['SubID'] = manage['SubID']
                         data['Name'] = ""
                         data['VipID'] = ""
-                        data['CrdID'] = ""
-                        data['CrdNo'] = ""
                         data['pageIndex'] = 1
                         data['pageSize'] = 10
                         data['sort'] = "uptDtt desc"
@@ -78,6 +76,30 @@ class Test_select_vipdata():
                                 print('没有会员')
                 except:
                         raise
+        #根据会员姓名查询会员数据
+        def test_select_menber_data_page_vipid(self,headers,manage,menber_register_response_data):
+                data={}
+                try:
+                        data['CpnID'] = manage['CpnID']
+                        data['SubID'] = manage['SubID']
+                        data['Name'] = menber_register_response_data['crdFaceID']
+                        data['VipID'] = ""
+                        data['pageIndex'] = 1
+                        data['pageSize'] = 10
+                        data['sort'] = "uptDtt desc"
+                        data['Stt'] = ""
+                        response=requests.post(url=manage['url'] % '/Gst/GetGstPage',data=data,headers=headers)
+                        response_json=response.json()
+                        assert response.status_code == 200
+                        assert response_json['message'] == "获取数据成功" 
+                        print(response_json['message'])
+                        if response_json['data']['PageDataList']:
+                                for i in response_json['data']['PageDataList']:
+                                        print('id:%s；name:%s；tel:%s；vipID:%s；' % (i['id'],i['name'],i['tel'],i['vipID']))
+                        else:
+                                print('没有会员')
+                except:
+                        raise
         #根据会员卡面号查询会员数据
         def test_select_menber_data_page_vipid(self,headers,manage,menber_register_response_data):
                 data={}
@@ -86,8 +108,6 @@ class Test_select_vipdata():
                         data['SubID'] = manage['SubID']
                         data['Name'] = ""
                         data['VipID'] = menber_register_response_data['crdFaceID']
-                        data['CrdID'] = ""
-                        data['CrdNo'] = ""
                         data['pageIndex'] = 1
                         data['pageSize'] = 10
                         data['sort'] = "uptDtt desc"
@@ -104,32 +124,7 @@ class Test_select_vipdata():
                                 print('没有会员')
                 except:
                         raise
-        #根据会员卡账号查询会员数据
-        def test_select_menber_data_page_cardid(self,headers,manage,menber_register_response_data):
-                data={}
-                try:
-                        data['CpnID'] = manage['CpnID']
-                        data['SubID'] = manage['SubID']
-                        data['Name'] = ""
-                        data['VipID'] = ""
-                        data['CrdID'] = menber_register_response_data['crdID']
-                        data['CrdNo'] = ""
-                        data['pageIndex'] = 1
-                        data['pageSize'] = 10
-                        data['sort'] = "uptDtt desc"
-                        data['Stt'] = ""
-                        response=requests.post(url=manage['url'] % '/Gst/GetGstPage',data=data,headers=headers)
-                        response_json=response.json()
-                        assert response.status_code == 200
-                        assert response_json['message'] == "获取数据成功" 
-                        print(response_json['message'])
-                        if response_json['data']['PageDataList']:
-                                for i in response_json['data']['PageDataList']:
-                                        print('id:%s；name:%s；tel:%s；vipID:%s；' % (i['id'],i['name'],i['tel'],i['vipID']))
-                        else:
-                                print('没有会员')
-                except:
-                        raise
+  
 class Test_menber_data():
         #查询会员单个资料
         def test_select_menber_data(self,headers,manage,menber_register_response_data):
@@ -137,15 +132,16 @@ class Test_menber_data():
                 try:
                         data['CpnID'] = manage['CpnID']
                         data["gstID"] = menber_register_response_data['gstID']
+                        print(data)
                         response=requests.post(url=manage['url'] % '/Gst/GetSingerData',data=data,headers=headers)
                         response_json=response.json()
-                        global menber_data
-                        menber_data=response_json['data']['Data'] 
                         assert response.status_code == 200
                         assert response_json['message'] == "获取成功"
+                        # mysql insert response data
+                        comm_way.sql_insert('menber_data_response',response_json['data']['Data'])
                         print(response_json['message'])
-                        if menber_data:
-                                print('id:%s；tel:%s；vipID:%s；' % (menber_data['id'],menber_data['tel'],menber_data['vipID']))
+                        if response_json['data']['Data']:
+                                print('id:%s；tel:%s；vipID:%s；' % (response_json['data']['Data']['id'],response_json['data']['Data']['tel'],response_json['data']['Data']['vipID']))
                         else:
                                 print('没有会员')
 
@@ -153,7 +149,7 @@ class Test_menber_data():
                         raise
 
         #修改会员信息
-        def test_update_menber_data(self,headers,manage,menber_data_random):
+        def test_update_menber_data(self,headers,manage,menber_data,menber_data_random):
                 data={}
                 try:
                         data['ID'] = menber_data['id']
@@ -201,6 +197,7 @@ class Test_menber_data():
                         data['updateProNames'] = 'tel,Name,IDntTp,IDntNmb,VipTpID,Brth'        #修改字段
                         response=requests.post(url=manage['url'] % '/Gst/Update',data=data,headers=headers)
                         response_json=response.json()
+                        print(response_json)
                         assert response.status_code == 200
                         assert response_json['message'] == "修改成功"
                         print(response_json['message'])
@@ -633,5 +630,11 @@ def test_get_signin_rule_page(headers,manage):
 
 
 
-# def test_z(zz(3)):
-#         pass
+
+
+
+
+
+
+
+

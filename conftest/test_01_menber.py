@@ -49,20 +49,22 @@ def test_menber_register(headers,menber,menber_data_random):
                 data['EmployeeNumber'] = ''
                 data['AppID'] = ''
                 data['AppSecret'] = ''
+                print(data)
                 # mysql insert request data
                 comm_way.sql_insert('register_request',data)
                 response=requests.post(url=menber['url'] % '/Guest/Register',data=data,headers=headers)
                 response_json=response.json()
+                print(response_json)
                 assert response.status_code == 200
                 assert response_json['message'] =='注册成功'
                 # mysql insert response data
                 comm_way.sql_insert('register_response',response_json['data']['Data'][0])
-                print(response_json['message'])
-                if response_json['data']['Data']:
-                        for i in response_json['data']['Data']:
-                                print('opnID:%s；tel:%s；crdFaceID:%s；crdID:%s；'% (i['opnID'],i['tel'],i['crdFaceID'],i['crdID']))
-                else:
-                        print('没有会员')
+                # print(response_json['message'])
+                # if response_json['data']['Data']:
+                #         for i in response_json['data']['Data']:
+                #                 print('opnID:%s；tel:%s；crdFaceID:%s；crdID:%s；'% (i['opnID'],i['tel'],i['crdFaceID'],i['crdID']))
+                # else:
+                #         print('没有会员')
         except:
                 raise
 
@@ -276,19 +278,19 @@ class Test_upload_ticked():
                         assert response.status_code == 200
                         assert response_json['message'] =='上传成功'
                         # mysql insert response data
-                        comm_way.sql_insert('upload_ticket',response_json['data'])
+                        comm_way.sql_insert('upload_ticket_response',response_json['data'])
                         print(response_json['message'])
                 except:
                         raise
                 
         #上传小票
-        def test_upload_ticket(self,headers,menber,menber_register_request_data,upload_ticked_response_data):
+        def test_upload_ticket(self,headers,menber,menber_register_request_data,upload_ticket_response_data):
                 data={}
                 try:
                         data['CpnID'] = menber['CpnID']
                         data['SubID'] = menber['SubID']
                         data['OpenID'] = menber_register_request_data['OpnID']
-                        data['ImgURL'] = upload_ticked_response_data['Data']
+                        data['ImgURL'] = upload_ticket_response_data['Data']
                         response=requests.post(url=menber['url'] % '/BllImg/UploadUsrBllImg',data=data,headers=headers)
                         response_json=response.json()
                         assert response.status_code == 200
@@ -320,42 +322,83 @@ class Test_upload_ticked():
                         raise
 
 
-# class Test_car():
-#         # 添加会员车辆信息
-#         def test_add_car_data(self,headers,menber,menber_register_response_data,car_data_random):
-#                 data={}
-#                 try:
-#                         data['CpnID'] = menber['CpnID']
-#                         # data['SubID'] = menber['SubID']
-#                         data['GstID'] = menber_register_response_data['gstID']
-#                         data['CarID'] = car_data_random['CarID'] #车牌号
-#                         data['CarTp'] = '敞篷超跑'
-#                         data['IsEv'] = 0  #是否新能源
-#                         data['IsSupIntgAuto'] = 1 #是否支持自动积分
-#                         data['Stt'] = 0
-#                         data['Brf'] = 'apitest'
-#                         data['OldCarID']=''
-#                         print(data)
-#                         response=requests.post(url=menber['url'] % '/GstCar/AddGstCar',data=data,headers=headers)
-#                         response_json=response.json()
-#                         print(response_json)
-#                         assert response.status_code == 200
-#                         assert response_json['message'] =='添加成功'
-#                         print(response_json['message'])
-#                 except:
-#                         raise
+class Test_car():
+        # 添加会员车辆信息
+        def test_add_car_data(self,headers,menber,menber_register_response_data,car_data_random):
+                data={}
+                try:
+                        data['CpnID'] = menber['CpnID']
+                        data['SubID'] = menber['SubID']
+                        data['GstID'] = menber_register_response_data['gstID']
+                        data['CarID'] = car_data_random['CarID']         #车牌号
+                        data['CarTp'] = car_data_random['carTp']
+                        data['IsEv'] = 0                                #是否新能源
+                        data['IsSupIntgAuto'] = 1                       #是否支持自动积分
+                        data['Stt'] = 0
+                        data['Brf'] = 'apitest'
+                        data['OldCarID']=''
+                        response=requests.post(url=menber['url'] % '/GstCar/AddGstCar',data=data,headers=headers)
+                        response_json=response.json()
+                        assert response.status_code == 200
+                        assert response_json['message'] =='添加成功'
+                        comm_way.sql_insert('car_data_response',response_json['data']['Data'][0])
+                        print(response_json['message'])
+                except:
+                        raise
+        #修改用户车辆信息
+        def test_update_car_data(self,headers,menber,car_data_response_data,car_data_random,now_time):
+                data={}
+                try:
+                        data['CpnID'] = menber['CpnID']
+                        data['ID'] = car_data_response_data['id']
+                        data['GstID'] = car_data_response_data['gstID']
+                        data['CarID'] = car_data_random['CarID']  
+                        data['CarTp'] = car_data_random['carTp']
+                        data['IsEv'] = car_data_response_data['isEv']
+                        data['IsSupIntgAuto'] = car_data_response_data['isSupIntgAuto']
+                        data['Stt'] = car_data_response_data['stt']
+                        data['Brf'] = 'update test'
+                        data['UptDtt'] = now_time['ymd_hms']
+                        data['Parm'] = 'CarID,CarTp,Brf,UptDtt'         #修改字段
+                        print(data)
+                        response=requests.post(url=menber['url'] % '/GstCar/UpGstCar',data=data,headers=headers)
+                        response_json=response.json()
+                        print(response_json)
+                        assert response.status_code == 200
+                        # assert response_json['message'] =='添加成功'
+                        # comm_way.sql_insert('car_data_response',response_json['data']['Data'][0])
+                        # print(response_json['message'])
+                except:
+                        raise
+
+        #获取当前用户车牌号
+        def test_get_user_car_data(self,headers,menber,menber_register_response_data):
+                data={}
+                try:
+                        data['CpnID'] = '0001'
+                        data['GstID'] = menber_register_response_data['gstID']
+                        response=requests.post(url=menber['url'] % '/GstCar/GetGstCar',data=data,headers=headers)
+                        response_json=response.json()
+                        print(response_json)
+                        assert response.status_code == 200
+                        assert response_json['message'] =='获取数据成功'
+                        if response_json['data']['Data']:
+                                for i in response_json['data']['Data']:
+                                        print('id:%s；gstID:%s；carID:%s；carTp:%s；' % (i['id'],i['gstID'],i['carID'],i['carTp']))
+                        else:
+                                print('没有车辆信息')
+                except:
+                        raise
 
 
 
 
 
-# def test(upload_ticked_response_data):
-#         print(upload_ticked_response_data['Data'])
 
 
 
-
-
+def test_z(car_data_response_data):
+        print(car_data_response_data)
 
 
 
