@@ -135,11 +135,18 @@ def xlsx_read_way():
     worksheet=workbook['Sheet1']
     return worksheet
 
-#读取图片
+#获取s3小票
 @pytest.fixture(scope='session')  
-def get_pictrue():
+def get_s3_ticket():
     data={}
     data['ticket']={'file': open('../img/ticket_one.jpg', 'rb')}
+    return data
+
+#获取s3广告
+@pytest.fixture(scope='session')  
+def get_s3_advert():
+    data={}
+    data['ticket']={'file': open('../img/advert_one.jpg', 'rb')}
     return data
 
 #随机停车场信息
@@ -198,10 +205,20 @@ def parking_rule_page_data():
 def upload_ticket_response_data():
     return comm_way.sql_select('upload_ticket_response')
 
+# mysql select table： upload_advert_response
+@pytest.fixture(scope='session')    
+def upload_advert_response_data():
+    return comm_way.sql_select('upload_advert_response')
+
 # mysql select table: car_data_response
 @pytest.fixture(scope='session')    
 def car_data_response_data():
     return comm_way.sql_select('car_data_response')
+
+# mysql select table: advert_position_response
+@pytest.fixture(scope='session')    
+def advert_position_response_data():
+    return comm_way.sql_select('advert_position_response')
 
 
 

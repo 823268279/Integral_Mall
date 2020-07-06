@@ -33,7 +33,7 @@ class Test_login():
                         response=requests.post(url=manage['url'] % '/User/Login',data=data)
                         response_json=response.json()
                         assert response.status_code == 200
-                        assert response_json['Message'] == '帐号或密码错误'
+                        assert response_json['success'] == True
                         print(response_json['Message'])
                 except:
                         raise
@@ -67,7 +67,7 @@ class Test_select_vipdata():
                         response=requests.post(url=manage['url'] % '/Gst/GetGstPage',data=data,headers=headers)
                         response_json=response.json()
                         assert response.status_code == 200
-                        assert response_json['message'] == "获取数据成功"
+                        assert response_json['success'] == True                        
                         print(response_json['message'])
                         if response_json['data']['PageDataList']:
                                 for i in response_json['data']['PageDataList']:
@@ -77,12 +77,12 @@ class Test_select_vipdata():
                 except:
                         raise
         #根据会员姓名查询会员数据
-        def test_select_menber_data_page_vipid(self,headers,manage,menber_register_response_data):
+        def test_select_menber_data_page_name(self,headers,manage,menber_register_response_data):
                 data={}
                 try:
                         data['CpnID'] = manage['CpnID']
                         data['SubID'] = manage['SubID']
-                        data['Name'] = menber_register_response_data['crdFaceID']
+                        data['Name'] = menber_register_response_data['name']
                         data['VipID'] = ""
                         data['pageIndex'] = 1
                         data['pageSize'] = 10
@@ -91,7 +91,7 @@ class Test_select_vipdata():
                         response=requests.post(url=manage['url'] % '/Gst/GetGstPage',data=data,headers=headers)
                         response_json=response.json()
                         assert response.status_code == 200
-                        assert response_json['message'] == "获取数据成功" 
+                        assert response_json['success'] == True
                         print(response_json['message'])
                         if response_json['data']['PageDataList']:
                                 for i in response_json['data']['PageDataList']:
@@ -115,7 +115,7 @@ class Test_select_vipdata():
                         response=requests.post(url=manage['url'] % '/Gst/GetGstPage',data=data,headers=headers)
                         response_json=response.json()
                         assert response.status_code == 200
-                        assert response_json['message'] == "获取数据成功" 
+                        assert response_json['success'] == True
                         print(response_json['message'])
                         if response_json['data']['PageDataList']:
                                 for i in response_json['data']['PageDataList']:
@@ -124,6 +124,7 @@ class Test_select_vipdata():
                                 print('没有会员')
                 except:
                         raise
+        
   
 class Test_menber_data():
         #查询会员单个资料
@@ -132,11 +133,10 @@ class Test_menber_data():
                 try:
                         data['CpnID'] = manage['CpnID']
                         data["gstID"] = menber_register_response_data['gstID']
-                        print(data)
                         response=requests.post(url=manage['url'] % '/Gst/GetSingerData',data=data,headers=headers)
                         response_json=response.json()
                         assert response.status_code == 200
-                        assert response_json['message'] == "获取成功"
+                        assert response_json['success'] == True                       
                         # mysql insert response data
                         comm_way.sql_insert('menber_data_response',response_json['data']['Data'])
                         print(response_json['message'])
@@ -197,9 +197,8 @@ class Test_menber_data():
                         data['updateProNames'] = 'tel,Name,IDntTp,IDntNmb,VipTpID,Brth'        #修改字段
                         response=requests.post(url=manage['url'] % '/Gst/Update',data=data,headers=headers)
                         response_json=response.json()
-                        print(response_json)
                         assert response.status_code == 200
-                        assert response_json['message'] == "修改成功"
+                        assert response_json['success'] == True                      
                         print(response_json['message'])
                 except:
                         raise
@@ -220,7 +219,7 @@ class Test_get_vipcard():
                         response=requests.post(url=manage['url'] % '/VipCrd/GetPageByParam',data=data,headers=headers)
                         response_json=response.json()
                         assert response.status_code == 200
-                        assert response_json['message'] =='获取数据成功'
+                        assert response_json['success'] == True                       
                         print(response_json['message'])
                         if response_json['data']['PageDataList']:
                                 for i in response_json['data']['PageDataList']:
@@ -244,7 +243,7 @@ class Test_get_vipcard():
                         response=requests.post(url=manage['url'] % '/VipCrd/GetPageByParam',data=data,headers=headers)
                         response_json=response.json()
                         assert response.status_code == 200
-                        assert response_json['message'] =='获取数据成功'
+                        assert response_json['success'] == True                       
                         print(response_json['message'])
                         if response_json['data']['PageDataList']:
                                 for i in response_json['data']['PageDataList']:
@@ -267,7 +266,7 @@ class Test_get_vipcard():
                         response=requests.post(url=manage['url'] % '/VipCrd/GetPageByParam',data=data,headers=headers)
                         response_json=response.json()
                         assert response.status_code == 200
-                        assert response_json['message'] =='获取数据成功'
+                        assert response_json['success'] == True                       
                         print(response_json['message'])
                         if response_json['data']['PageDataList']:
                                 for i in response_json['data']['PageDataList']:
@@ -290,7 +289,7 @@ class Test_get_vipcard():
                         response=requests.post(url=manage['url'] % '/VipCrd/GetPageByParam',data=data,headers=headers)
                         response_json=response.json()
                         assert response.status_code == 200
-                        assert response_json['message'] =='获取数据成功'
+                        assert response_json['success'] == True                       
                         print(response_json['message'])
                         if response_json['data']['PageDataList']:
                                 for i in response_json['data']['PageDataList']:
@@ -326,7 +325,7 @@ class Test_parking():
                         response=requests.post(url=manage['url'] % '/Park/AddParkConfig',data=data,headers=headers)
                         response_json=response.json()
                         assert response.status_code == 200
-                        assert response_json['message'] =='添加成功'
+                        assert response_json['success'] == True                     
                         print(response_json['message'])
                 except:
                         raise
@@ -347,7 +346,7 @@ class Test_parking():
                         # mysql insert response data
                         comm_way.sql_insert('parking_response',response_json['data']['PageDataList'][0])
                         assert response.status_code == 200
-                        assert response_json['message'] =='获取数据成功'
+                        assert response_json['success'] == True                       
                         print(response_json['message'])
                         if response_json['data']['PageDataList']:
                                 for i in response_json['data']['PageDataList']:
@@ -381,7 +380,7 @@ class Test_parking():
                         response=requests.post(url=manage['url'] % '/Park/UpdateParkConfig',data=data,headers=headers)
                         response_json=response.json()
                         assert response.status_code == 200
-                        assert response_json['message'] =='修改成功'
+                        assert response_json['success'] == True                     
                         print(response_json['message'])
                 except:
                         raise
@@ -394,7 +393,7 @@ class Test_parking():
                         response=requests.post(url=manage['url'] % '/Park/GetParkConfigSinger',data=data,headers=headers)
                         response_json=response.json()
                         assert response.status_code == 200
-                        assert response_json['message'] =='获取成功'
+                        assert response_json['success'] == True                     
                         print(response_json['message'])
                         if response_json['data']['Data']:
                                 print('id:%s；' % response_json['data']['Data']['id'])
@@ -434,7 +433,7 @@ class Test_parking():
                                 response=requests.post(url=manage['url'] % '/Park/AddParkRule',data=data,headers=headers)
                                 response_json=response.json()
                                 assert response.status_code == 200
-                                assert response_json['message'] =='添加成功'
+                                assert response_json['success'] == True                        
                                 print(response_json['message'])
                         except:
                                 raise
@@ -452,7 +451,7 @@ class Test_parking():
                         # mysql insert response data
                         comm_way.sql_insert('parking_rule_response',response_json['data']['PageDataList'][0])
                         assert response.status_code == 200
-                        assert response_json['message'] =='获取数据成功'
+                        assert response_json['success'] == True                       
                         print(response_json['message'])
                         if response_json['data']['PageDataList']:
                                 for i in response_json['data']['PageDataList']:
@@ -470,7 +469,7 @@ class Test_parking():
                         response=requests.post(url=manage['url'] % '/Park/GetParkRuleSinger',data=data,headers=headers)
                         response_json=response.json()
                         assert response.status_code == 200
-                        assert response_json['message'] =='获取成功'
+                        assert response_json['success'] == True                     
                         print(response_json['message'])
                         if response_json['data']['Data']:
                                 print('id:%s；' % response_json['data']['Data']['id'])
@@ -509,7 +508,7 @@ class Test_parking():
                         response=requests.post(url=manage['url'] % '/Park/UpdateParkRule',data=data,headers=headers)
                         response_json=response.json()
                         assert response.status_code == 200
-                        assert response_json['message'] =='修改成功'
+                        assert response_json['success'] == True                     
                         print(response_json['message'])
                 except:
                         raise
@@ -532,7 +531,7 @@ class Test_system_config():
                         global response_system_config
                         response_system_config=response_json['data']['PageDataList']
                         assert response.status_code == 200
-                        assert response_json['message'] =='获取数据成功'
+                        assert response_json['success'] == True                       
                         print(response_json['message'])
                         if response_system_config:
                                 for i in response_system_config:
@@ -550,7 +549,7 @@ class Test_system_config():
                         response=requests.post(url=manage['url'] % '/SysPara/Update',data=data,headers=headers)
                         response_json=response.json()
                         assert response.status_code == 200
-                        assert response_json['message'] =='修改成功'       
+                        assert response_json['success'] == True   
                         print(response_json['message'])            
                 except:
                         raise
@@ -562,7 +561,7 @@ class Test_system_config():
                         response=requests.post(url=manage['url'] % '/SysPara/Get',data=data,headers=headers)
                         response_json=response.json()
                         assert response.status_code == 200
-                        assert response_json['message'] =='获取成功'
+                        assert response_json['success'] == True                     
                         print(response_json['message'])
                         print('id:%s；' % response_json['data']['Data']['id'])
                         print('code:%s；' % response_json['data']['Data']['code'])
@@ -572,61 +571,252 @@ class Test_system_config():
                 except:
                         raise
 
-                
-#添加签到规则
-def test_add_signin_rule(headers,manage,now_time):
-        data={}
-        try:    
-                data['CpnID'] = manage['CpnID']
-                data['SubID'] = manage['SubID']
-                data['ID'] = "0"
-                data['Typ'] = "1"       #赠送类型[0-金币、1-积分]  
-                data['Days'] = "1"      #累积达到天数赠送 
-                data['Integral'] = "20" #赠送值
-                data['LngValid'] = "1"  #是否长期有效[0-是、1-否]
-                data['IsStop'] = "0"    #是否终止[0-正常、1-终止]
-                data['StDt'] = now_time['StDt']
-                data['EdDt'] = now_time['EdDt']
-                data['Brf'] = "apitest"
-                data['Uptr'] = manage['username']
-                data['UptDtt'] = now_time['ymd_hms']
-                response=requests.post(url=manage['url'] % '/SignInRules/AddSignInRules',data=data,headers=headers)
-                response_json=response.json()
-                print(response_json)
-                assert response.status_code == 200
-                assert response_json['Message'] =='添加成功'
-                print(response_json['Message'])
-        except:
-                raise
+
+
+class Test_signin():
+        #添加签到规则
+        def test_add_signin_rule(self,headers,manage,now_time):
+                data={}
+                try:    
+                        data['CpnID'] = manage['CpnID']
+                        data['SubID'] = manage['SubID']
+                        data['ID'] = "0"
+                        data['Typ'] = "1"       #赠送类型[0-金币、1-积分]  
+                        data['Days'] = "1"      #累积达到天数赠送 
+                        data['Integral'] = "20" #赠送值
+                        data['LngValid'] = "1"  #是否长期有效[0-是、1-否]
+                        data['IsStop'] = "0"    #是否终止[0-正常、1-终止]
+                        data['StDt'] = now_time['StDt']
+                        data['EdDt'] = now_time['EdDt']
+                        data['Brf'] = "apitest"
+                        data['Uptr'] = manage['username']
+                        data['UptDtt'] = now_time['ymd_hms']
+                        response=requests.post(url=manage['url'] % '/SignInRules/AddSignInRules',data=data,headers=headers)
+                        response_json=response.json()
+                        assert response.status_code == 200
+                        assert response_json['success'] == True                     
+                        print(response_json['Message'])
+                except:
+                        raise
+        #获取签到规则分页
+        def test_get_signin_rule_page(self,headers,manage):
+                data={}
+                try:    
+                        data['CpnID'] = manage['CpnID']
+                        data['SubID'] = manage['SubID']
+                        data['Typ'] = "-99"       #赠送类型[0-金币、1-积分]  
+                        data['Days'] = ""      #累积达到天数赠送 
+                        data['Integral'] = "" #赠送值
+                        data['LngValid'] = "-99"  #是否长期有效[0-是、1-否]
+                        data['IsStop'] = "-99"    #是否终止[0-正常、1-终止]
+                        data['StDt'] = ""
+                        data['EdDt'] = ""
+                        data['PgIndex'] = 1
+                        data['PgSize'] = 10
+                        response=requests.post(url=manage['url'] % '/SignInRules/GetWhereSignInRules',data=data,headers=headers)
+                        response_json=response.json()
+                        assert response.status_code == 200
+                        assert response_json['success'] == True                        
+                        if response_json['data']['PageDataList']:
+                                for i in response_json['data']['PageDataList']:
+                                        print('id:%s；typ:%s；days:%s；integral:%s；stDt:%s；edDt:%s；' % (i['id'],i['typ'],i['days'],i['integral'],i['stDt'],i['edDt']))
+                        else:
+                                print('没有签到规则')
+                except:
+                        raise
 
 
 
+class Test_advert():
+        #上传广告到s3
+        def test_upload_advert_s3(self,headers,menber,get_s3_advert):   
+                data={}
+                try:
+                        data['CpnID'] = menber['CpnID']
+                        response=requests.post(url=menber['url'] % '/Guest/UnloadPic',files=get_s3_advert['ticket'],data=data,headers=headers)
+                        response_json=response.json()
+                        assert response.status_code == 200
+                        assert response_json['success'] == True                     
+                        # mysql insert response data
+                        comm_way.sql_insert('upload_advert_response',response_json['data'])
+                        print(response_json['message'])
+                except:
+                        raise 
+        #添加广告位
+        def test_add_advert_position(self,headers,manage,now_time,upload_advert_response_data):
+                data={}
+                data_sublist={}
+                try:
+                        data['CpnID'] = manage['CpnID']
+                        data['SubID'] = manage['SubID']
+                        data['ID'] = '0'
+                        data['Name'] = '浪漫热夏'       #广告位名称
+                        data['KyWrd'] = ''              #关键词
+                        data['ShwPosi'] = '1'           #显示位置代码
+                        data['Clms'] = '1'              #显示列数
+                        data['AdWidth'] = '0'           #广告位宽度
+                        data['AdHeight'] = '0'          #广告位高度
+                        data['AdTyp'] = '0'             #类型（0-手机端，1-pc端）
+                        data['OpnTyp'] = '0'            #打开方式（0-当前页，-1-新开窗口）
+                        data['Stt'] = '0'               #状态（0-启用，-1关闭）
+                        data['StDt'] = now_time['StDt'] #为空立即生效
+                        data['EdDt'] = now_time['EdDt'] #为空则无过期时间
+                        data['Brf'] = 'apitest'
+                        data['Deleted'] = 'N'           #（N-正常，Y-删除）
+                        data['Uptr'] = manage['username']
+                        data['UptDtt'] = now_time['ymd_hms']
+                        data_sublist['ID'] = '1'
+                        data_sublist['CpnID'] = manage['CpnID']
+                        data_sublist['SubID'] = manage['SubID']
+                        data_sublist['Name'] = '浪漫热夏'
+                        data_sublist['AdPosiID'] = '0'
+                        data_sublist['AdText'] = ''
+                        data_sublist['KyWrd'] = ''
+                        data_sublist['Rdx'] = '0'
+                        data_sublist['StDt'] = now_time['StDt']
+                        data_sublist['EdDt'] = now_time['EdDt']
+                        data_sublist['AdTyp'] = '4'     #类型（0-品牌，1-分类，2-商品，3-店铺，4-广告内容）
+                        data_sublist['Intro'] = upload_advert_response_data['Data']
+                        data_sublist['ShwTyp'] = '0'    #显示方式（0-图片，1-文字，2-网页，3-视频）
+                        data_sublist['IsShw'] = '0'     #（0-显示，1-隐藏）
+                        data_sublist['Stt'] = '50'      #（-1-作废，0-录入，50-审核通过）
+                        data_sublist['CrtUsr'] = '0' 
+                        data_sublist['CrtDt'] = now_time['ymd_hms']
+                        data_sublist['Brf'] = 'apitest'
+                        data_sublist['Deleted'] = 'N'   #（N-正常，Y-删除）
+                        data_sublist['Uptr'] = '0'
+                        data_sublist['UptDtt'] = now_time['ymd_hms']
+                        data['List']=[]
+                        data['List'].append(data_sublist)
+                        response=requests.post(url=manage['url'] % '/AdPosi/Add',data=data,headers=headers)
+                        response_json=response.json()
+                        assert response.status_code == 200
+                        assert response_json['success'] == True             
+                except:
+   
+                        raise 
+        #查询广告位分页
+        def test_get_advert_position_page(self,headers,manage):
+                data={}
+                try:
+                        data['CpnID'] = manage['CpnID']
+                        data['SubID'] = manage['SubID']
+                        data['Name'] = ''
+                        data['ShowPosi'] = ''
+                        data['AdTyp'] = ''
+                        data['Stt'] = ''
+                        data['PageIndex'] = '1'
+                        data['PageSize'] = '10'
+                        data['Sort'] = 'uptDtt desc'
+                        response=requests.post(url=manage['url'] % '/AdPosi/GetAdPosiPage',data=data,headers=headers)
+                        response_json=response.json()
+                        assert response.status_code == 200
+                        assert response_json['success'] == True                       
+                        # mysql insert response data
+                        comm_way.sql_insert('advert_position_response',response_json['data']['PageDataList'][0])
+                        if response_json['data']['PageDataList']:
+                                for i in response_json['data']['PageDataList']:
+                                        print('id:%s；name:%s；shwPosi:%s；clms:%s；adWidth:%s；adHeight:%s；stt:%s；stDt:%s；edDt:%s；' % (i['id'],i['name'],i['shwPosi'],i['clms'],i['adWidth'],i['adHeight'],i['stt'],i['stDt'],i['edDt'],))
 
-#获取签到规则分页
-def test_get_signin_rule_page(headers,manage):
-        data={}
-        try:    
-                data['CpnID'] = manage['CpnID']
-                data['SubID'] = manage['SubID']
-                data['Typ'] = "-99"       #赠送类型[0-金币、1-积分]  
-                data['Days'] = ""      #累积达到天数赠送 
-                data['Integral'] = "" #赠送值
-                data['LngValid'] = "-99"  #是否长期有效[0-是、1-否]
-                data['IsStop'] = "-99"    #是否终止[0-正常、1-终止]
-                data['StDt'] = ""
-                data['EdDt'] = ""
-                data['PgIndex'] = 1
-                data['PgSize'] = 10
-                print(data)
-                response=requests.post(url=manage['url'] % '/SignInRules/GetWhereSignInRules',data=data,headers=headers)
-                response_json=response.json()
-                print(response_json)
-                assert response.status_code == 200
-        except:
-                raise
+                        else:
+                                print('没有广告位')
+                except:
+                        raise 
+        # def test_update_advert_position(self,now_time,headers,manage,advert_position_response_data,upload_advert_response_data):
+        #         data={}
+        #         data_sublist={}
+        #         try:
+        #                 data['CpnID'] = manage['CpnID']
+        #                 data['SubID'] = manage['SubID']
+        #                 data['ID'] = advert_position_response_data['id']
+        #                 data['Name'] = '清凉一夏'       #广告位名称
+        #                 data['KyWrd'] = ''              #关键词
+        #                 data['ShwPosi'] = '1'            #显示位置代码
+        #                 data['Clms'] = '1'              #显示列数
+        #                 data['AdWidth'] = '0'           #广告位宽度
+        #                 data['AdHeight'] = '0'          #广告位高度
+        #                 data['AdTyp'] = '0'             #类型（0-手机端，1-pc端）
+        #                 data['OpnTyp'] = '0'            #打开方式（0-当前页，-1-新开窗口）
+        #                 data['Stt'] = '0'               #状态（0-启用，-1关闭）
+        #                 data['StDt'] = now_time['StDt'] #为空立即生效
+        #                 data['EdDt'] = now_time['EdDt'] #为空则无过期时间
+        #                 data['Brf'] = 'apitest'
+        #                 data['Deleted'] = 'N'           #（N-正常，Y-删除）
+        #                 data['Uptr'] = manage['username']
+        #                 data['UptDtt'] = now_time['ymd_hms']
+        #                 data_sublist['ID'] = '1'
+        #                 data_sublist['CpnID'] = manage['CpnID']
+        #                 data_sublist['SubID'] = manage['SubID']
+        #                 data_sublist['Name'] = '清凉一夏'
+        #                 data_sublist['AdPosiID'] = '0'
+        #                 data_sublist['AdText'] = ''
+        #                 data_sublist['KyWrd'] = ''
+        #                 data_sublist['Rdx'] = '0'
+        #                 data_sublist['StDt'] = now_time['StDt']
+        #                 data_sublist['EdDt'] = now_time['EdDt']
+        #                 data_sublist['AdTyp'] = '4'     #类型（0-品牌，1-分类，2-商品，3-店铺，4-广告内容）
+        #                 data_sublist['Intro'] = upload_advert_response_data['Data']
+        #                 data_sublist['ShwTyp'] = '0'    #显示方式（0-图片，1-文字，2-网页，3-视频）
+        #                 data_sublist['IsShw'] = '0'     #（0-显示，1-隐藏）
+        #                 data_sublist['Stt'] = '50'      #（-1-作废，0-录入，50-审核通过）
+        #                 data_sublist['CrtUsr'] = '0' 
+        #                 data_sublist['CrtDt'] = now_time['ymd_hms']
+        #                 data_sublist['Brf'] = 'apitest'
+        #                 data_sublist['Deleted'] = 'N'   #（N-正常，Y-删除）
+        #                 data_sublist['Uptr'] = '0'
+        #                 data_sublist['UptDtt'] = now_time['ymd_hms']
+        #                 data['List']=[]
+        #                 data['List'].append(data_sublist)
+        #                 data['UpdateProNames'] = 'Name,StDt,EdDt,list'     #修改字段
+        #                 print(data)
+        #                 response=requests.post(url=manage['url'] % '/AdPosi/Update',data=data,headers=headers)
+        #                 response_json=response.json()
+        #                 print(response_json)
+        #                 # assert response.status_code == 200
+        #                 assert response_json['success'] == True     
+# #             except:
+ 
+        #                 raise
 
+        def test_get_advert_position(self,headers,manage,advert_position_response_data):
+                data={}
+                try:
+                        data['CpnID'] = manage['CpnID']
+                        data['id'] = advert_position_response_data['id']
+                        response=requests.post(url=manage['url'] % '/AdPosi/Get',data=data,headers=headers)
+                        response_json=response.json()
+                        assert response.status_code == 200
+                        assert response_json['success'] == True
+                        list=[]
+                        list.append(response_json['data']['AdPosi'])
+                        for i in list:
+                                print('id:%s；name:%s；shwPosi:%s；clms:%s；adWidth:%s；adHeight:%s；stt:%s；stDt:%s；edDt:%s；' % (i['id'],i['name'],i['shwPosi'],i['clms'],i['adWidth'],i['adHeight'],i['stt'],i['stDt'],i['edDt'],))
 
-    
+                        
+                except:
+                        raise 
+        def test_get_index_advert_position(self,headers,menber):
+                data={}
+                try:
+                        data['CpnID'] = menber['CpnID']
+                        data['SubID'] = menber['SubID']
+                        data['ShwPosi'] = '1'
+                        response=requests.post(url=menber['url'] % '/AdPosi/GetAdPosiByMobileet',data=data,headers=headers)
+                        response_json=response.json()
+                        assert response.status_code == 200
+                        assert response_json['success'] == True
+                        list=[]
+                        list.append(response_json['data']['AdPosi'])
+                        for i in list:
+                                print('id:%s；name:%s；shwPosi:%s；clms:%s；adWidth:%s；adHeight:%s；stt:%s；stDt:%s；edDt:%s；' % (i['id'],i['name'],i['shwPosi'],i['clms'],i['adWidth'],i['adHeight'],i['stt'],i['stDt'],i['edDt'],))
+                        if response_json['data']['Ad']:
+                                for i in response_json['data']['Ad']:
+                                        print('id:%s；name:%s；intro:%s' % (i['id'],i['name'],i['intro']))
+                        else:
+                                print('没有广告内容')
+                except:
+                        raise 
+
 
 
 
