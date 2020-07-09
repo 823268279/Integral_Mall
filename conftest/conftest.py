@@ -128,13 +128,6 @@ def menber_data_random():
     return data
 
 
-#读取excel
-def xlsx_read_way():
-    __file__ = r'../test_data/2020-05-09-09-27_test_data.xlsx'
-    workbook=load_workbook(__file__)
-    worksheet=workbook['Sheet1']
-    return worksheet
-
 #获取s3小票
 @pytest.fixture(scope='session')  
 def get_s3_ticket():

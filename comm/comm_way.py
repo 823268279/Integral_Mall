@@ -25,8 +25,14 @@ from email.utils import parseaddr, formataddr
 import pymysql
 
 
-
 class Way():
+    # response dispose to capitalize
+    def response_dispose(self,dict_info):
+        new_dict = {}
+        for i, n in dict_info.items():
+                new_dict[i.capitalize()] = n
+        return new_dict
+
     # sql insert 
     def sql_insert(self,table,data):
         conn = pymysql.connect('localhost','root','root','newcrm')
