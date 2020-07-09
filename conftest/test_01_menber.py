@@ -60,7 +60,7 @@ def test_menber_register(headers,menber,menber_data_random):
                 comm_way.sql_insert('register_response',response_json['Data']['Data'][0])
                 if response_json['Data']['Data']:
                         for i in response_json['Data']['Data']:
-                                print('opnID:%s；tel:%s；crdFaceID:%s；crdID:%s；'% (i['opnID'],i['tel'],i['crdFaceID'],i['crdID']))
+                                print(i)
                 else:
                         print('没有会员')
         except:
@@ -131,7 +131,7 @@ class Test_sign_in():
                         assert response_json['Success'] == True
                         if response_json['Data']['Data']:
                                 for i in response_json['Data']['Data']:
-                                        print('id:%s；gstID:%s；signTime:%s；integral:%s；' % (i['id'],i['gstID'],i['signTime'],i['integral']))
+                                        print(i)
                         else:
                                 print('没有签到记录')
                 except:
@@ -149,10 +149,7 @@ class Test_index_menber_data():
                         print(response_json['Message'])
                         assert response.status_code == 200
                         assert response_json['Success'] == True
-                        list=[]
-                        list.append(response_json['Data']['Data'])
-                        for i in list:
-                                print('vipID:%s；intgAva:%s；tknQty:%s；signInDay:%s；'% (i['vipID'],i['intgAva'],i['tknQty'],i['signInDay']))
+                        print(response_json['Data']['Data'])
                 except:
                         raise
 
@@ -170,7 +167,7 @@ class Test_index_menber_data():
                         assert response_json['Success'] == True
                         if response_json['Data']['Data']:
                                 for i in response_json['Data']['Data']:
-                                        print('crdID:%s；crdTpid:%s；gstID:%s；vipID:%s；name:%s；mbl:%s；'% (i['crdID'],i['crdTpid'],i['gstID'],i['vipID'],i['name'],i['mbl']))
+                                        print(i)
                         else:
                                 print('没有会员卡')
                 except:
@@ -187,10 +184,7 @@ class Test_index_menber_data():
                         print(response_json['Message'])
                         assert response.status_code == 200
                         assert response_json['Success'] == True
-                        list=[]
-                        list.append(response_json['Data']['Data'])
-                        for i in list:
-                                print('crdID:%s；crdTpid:%s；gstID:%s；vipID:%s；name:%s；mbl:%s；'% (i['crdID'],i['crdTpid'],i['gstID'],i['vipID'],i['name'],i['mbl']))
+                        print(response_json['Data']['Data'])
                 except:
                         raise
 
@@ -209,7 +203,7 @@ class Test_index_menber_data():
                         assert response_json['Success'] == True
                         if response_json['Data']['PageDataList']:
                                 for i in response_json['Data']['PageDataList']:
-                                        print('gstID:%s；vipID:%s；intgAmt:%s；uptDtt:%s；'% (i['gstID'],i['vipID'],i['intgAmt'],i['uptDtt']))
+                                        print(i)
                         else:
                                 print('没有积分明细')
                 except:
@@ -241,7 +235,7 @@ def test_get_wifi_password(headers,menber):
                 assert response.status_code == 200
                 if response_json:
                         for i in response_json:
-                                print('id:%s；code:%s；name:%s；crtVl:%s;' % (i['id'],i['code'],i['name'],i['crtVl']))
+                                print(i)
                 else:
                         print('没有wifi信息')
         except :
@@ -314,7 +308,7 @@ class Test_upload_ticked():
                         assert response_json['Success'] == True
                         if response_json['Data']['BllImgList']:
                                 for i in response_json['Data']['BllImgList']:
-                                        print('id:%s；crdNo:%s；opnID:%s；bllUrl:%s'% (i['id'],i['crdNo'],i['opnID'],i['bllUrl']))
+                                        print(i)
                         else:
                                 print('没有上传记录')
                 except:
@@ -382,7 +376,7 @@ class Test_car():
                         assert response_json['Success'] == True
                         if response_json['Data']:
                                 for i in response_json['Data']['Data']:
-                                        print('id:%s；gstID:%s；carID:%s；carTp:%s；' % (i['id'],i['gstID'],i['carID'],i['carTp']))
+                                        print(i)
                         else:
                                 print('没有车辆信息')
                 except:

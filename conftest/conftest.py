@@ -214,4 +214,12 @@ def advert_position_response_data():
     return comm_way.sql_select('advert_position_response')
 
 
+# mysql select table:ticket_type_response
+@pytest.fixture(scope='session')    
+def ticket_type_response_data():
+    return comm_way.sql_select('ticket_type_response')
 
+# mysql select table:ticket_seed_response
+@pytest.fixture(scope='session')    
+def ticket_seed_response_data():
+    return comm_way.sql_select('ticket_seed_response')
