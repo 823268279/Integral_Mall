@@ -38,12 +38,12 @@ def headers():
         }
     try:
         response=requests.post(url=url,data=data)
-        response_json=response.json()
+        response_json = comm_way.response_dispose(response.json())
+        print(response_json['Message'])
         assert response.status_code == 200
-        assert response_json['message'] =='获取授权成功'
-        print(response_json['message'])
+        assert response_json['Success'] == True
         headers={}
-        headers['Authorization']=response_json['data']['Data']['token']
+        headers['Authorization']=response_json['Data']['Data']['token']
         return headers
     except:
         raise
@@ -127,6 +127,28 @@ def menber_data_random():
     data['IDntNmb']='51%s%s%s'% (r1,r2,r3)
     return data
 
+#随机优惠券数据
+@pytest.fixture(scope='module')   
+def ticket_data_random():
+    data={}
+    # 券ID
+    TknID = sum(random.sample(range(100000,1000000),2))
+    # 满送金额线
+    ConsumeMoney = random.choice(range(200,500))
+    # 满送券面额
+    Tknvl = random.choice(range(50,150))
+    # 券名称
+    name = '消费%s,即可使用' % (ConsumeMoney)
+    # 送券描述
+    SndRul = '消费大于等于%s,即可使用面额为%s的优惠券' % (ConsumeMoney,Tknvl)
+    data['ConsumeMoney']=ConsumeMoney
+    data['Tknvl']=Tknvl
+    data['Name']=name
+    data['SndRul']=SndRul
+    data['TknID']=TknID
+    return data
+
+
 
 #获取s3小票
 @pytest.fixture(scope='session')  
@@ -202,6 +224,11 @@ def upload_ticket_response_data():
 @pytest.fixture(scope='session')    
 def upload_advert_response_data():
     return comm_way.sql_select('upload_advert_response')
+
+# mysql select table:  signin_rule_response
+@pytest.fixture(scope='session')    
+def signin_rule_response_data():
+    return comm_way.sql_select('signin_rule_response')
 
 # mysql select table: car_data_response
 @pytest.fixture(scope='session')    

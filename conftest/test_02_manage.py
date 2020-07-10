@@ -227,7 +227,7 @@ class Test_get_vipcard():
                 except:
                         raise
 
-        #根据卡账号查询会员
+        #根据会员ID查询会员
         def test_get_vipcard_paging_gstid(self,headers,manage,menber_register_response_data):
                 data={}
                 try:
@@ -598,8 +598,11 @@ class Test_signin():
                         data['PgSize'] = 10
                         response=requests.post(url=manage['url'] % '/SignInRules/GetWhereSignInRules',data=data,headers=headers)
                         response_json = comm_way.response_dispose(response.json())
+                        print(response_json['Message'])
                         assert response.status_code == 200
-                        assert response_json['Success'] == True                        
+                        assert response_json['Success'] == True  
+                        # mysql insert response data
+                        comm_way.sql_insert('signin_rule_response',response_json['Data']['PageDataList'][0])                      
                         if response_json['Data']['PageDataList']:
                                 for i in response_json['Data']['PageDataList']:
                                         print(i)
@@ -607,8 +610,53 @@ class Test_signin():
                                 print('没有签到规则')
                 except:
                         raise
-
-
+        # 修改签到规则
+        def test_update_signin_rule(self,headers,manage,signin_rule_response_data,now_time):
+                data={}
+                try:    
+                        data['CpnID'] = manage['CpnID']
+                        data['SubID'] = manage['SubID']
+                        data['ID'] = signin_rule_response_data['id']
+                        data['Typ'] = signin_rule_response_data['typ']       #赠送类型[0-金币、1-积分]  
+                        data['Days'] = signin_rule_response_data['days']      #累积达到天数赠送 
+                        data['Integral'] = "30"                                 #赠送值
+                        data['LngValid'] = signin_rule_response_data['lngValid']  #是否长期有效[0-是、1-否]
+                        data['IsStop'] = signin_rule_response_data['isStop']    #是否终止[0-正常、1-终止]
+                        data['StDt'] = now_time['StDt']
+                        data['EdDt'] = now_time['EdDt']
+                        data['Brf'] = "apitest update"
+                        data['Uptr'] = manage['username']
+                        data['UptDtt'] = now_time['ymd_hms']
+                        data['parm'] = 'Integral'
+                        print(data)
+                        response=requests.post(url=manage['url'] % '/SignInRules/UpSignInRules',data=data,headers=headers)
+                        response_json = comm_way.response_dispose(response.json())
+                        print(response_json['Message'])
+                        response_json = comm_way.response_dispose(response.json())
+                        assert response.status_code == 200
+                        assert response_json['Success'] == True  
+                except:
+                        raise
+        
+        # 获取单个签到规则
+        def test_get_signin_rule(self,headers,manage,signin_rule_response_data):
+                data={}
+                try:    
+                        data['CpnID'] = manage['CpnID']
+                        data['SubID'] = manage['SubID']
+                        data['ID'] = signin_rule_response_data['id']
+                        response=requests.post(url=manage['url'] % '/SignInRules/GetSignInRules',data=data,headers=headers)
+                        response_json = comm_way.response_dispose(response.json())
+                        print(response_json['Message'])
+                        assert response.status_code == 200
+                        assert response_json['Success'] == True                    
+                        if response_json['Data']['Data']:
+                                for i in response_json['Data']['Data']:
+                                        print(i)
+                        else:
+                                print('没有签到规则')
+                except:
+                        raise
 
 class Test_advert():
         #上传广告到s3
@@ -874,6 +922,41 @@ class Test_ticket_type():
 
 #券种
 class Test_ticket_seed():
+        # 新增券种
+        def test_add_ticket_seed(self,headers,manage,ticket_data_random,ticket_type_response_data,now_time):
+                data={}
+                try:
+                        data['CpnID'] = manage['CpnID']
+                        data['TknID'] = ticket_data_random['TknID']
+                        data['Name'] = ticket_data_random['Name']
+                        data['Tknvl'] = ticket_data_random['Tknvl']
+                        data['ConsumeMoney'] = ticket_data_random ['ConsumeMoney']
+                        data['TknImg'] = ''
+                        data['TknDsc'] = ''
+                        data['TknTpID'] = ticket_type_response_data['tknTpID']
+                        data['SndRul'] = ticket_data_random['SndRul']
+                        data['RcvRul'] = ''
+                        data['VipTpID'] = ''
+                        data['BrfId'] = ''
+                        data['SDt'] = now_time['StDt']
+                        data['EDt'] = now_time['EdDt']
+                        data['TStt'] = 'F'
+                        data['UseSDy'] = '0'
+                        data['UseADy'] = '0'
+                        data['TknSdt'] = ''
+                        data['TknEdt'] = ''
+                        data['RjcStt'] = 'F'
+                        data['Brf'] = 'apitest add'
+                        data['ImpCRM'] = '0'
+                        data['Stt'] =  '2'
+                        data['UptDtt'] = now_time['ymd_hms']
+                        response=requests.post(url=manage['url'] % '/Tkn/Add',data=data,headers=headers)
+                        response_json = comm_way.response_dispose(response.json())
+                        print(response_json['Message'])
+                        assert response.status_code == 200
+                        assert response_json['Success'] == True
+                except:
+                        raise
         # 获取券种分页
         def test_get_ticket_seed_page(self,headers,manage):
                 data={}
@@ -906,35 +989,34 @@ class Test_ticket_seed():
                 except:
                         raise 
         # 修改券种
-        def test_update_ticket_seed(self,headers,manage,ticket_seed_response_data,now_time):
-                print(ticket_seed_response_data)
+        def test_update_ticket_seed(self,headers,manage,ticket_data_random,ticket_seed_response_data,now_time):
                 data={}
                 try:
                         data['CpnID'] = manage['CpnID']
                         data['TknID'] = ticket_seed_response_data['tknID']
-                        data['Name'] = ticket_seed_response_data['name']
-                        data['Tknvl'] = ticket_seed_response_data['tknvl']
-                        data['ConsumeMoney'] = ticket_seed_response_data['consumeMoney']
+                        data['Name'] = ticket_data_random['Name']
+                        data['Tknvl'] = ticket_data_random['Tknvl']
+                        data['ConsumeMoney'] = ticket_data_random['ConsumeMoney']
                         data['TknImg'] = ticket_seed_response_data['tknImg']
                         data['TknDsc'] = ticket_seed_response_data['tknDsc']
                         data['TknTpID'] = ticket_seed_response_data['tknTpID']
-                        data['SndRul'] = ticket_seed_response_data['sndRul']
+                        data['SndRul'] = ticket_data_random['SndRul']
                         data['RcvRul'] = ticket_seed_response_data['rcvRul']
                         data['VipTpID'] = ticket_seed_response_data['vipTpID']
                         data['BrfId'] = ticket_seed_response_data['brfId']
-                        data['SDt'] = ticket_seed_response_data['sDt']
-                        data['EDt'] = ticket_seed_response_data['eDt']
+                        data['SDt'] = now_time['StDt']
+                        data['EDt'] = now_time['EdDt']
                         data['TStt'] = ticket_seed_response_data['tStt']
                         data['UseSDy'] = ticket_seed_response_data['useSDy']
                         data['UseADy'] = ticket_seed_response_data['useADy']
                         data['TknSdt'] = ''
                         data['TknEdt'] = ''
                         data['RjcStt'] = ticket_seed_response_data['rjcStt']
-                        data['Brf'] = 'apitest'
+                        data['Brf'] = 'apitest update'
                         data['ImpCRM'] = ticket_seed_response_data['impCRM']
                         data['Stt'] = ticket_seed_response_data['stt']
                         data['UptDtt'] = now_time['ymd_hms']
-                        data['UpdateProName'] = 'Brf,UptDtt'
+                        data['UpdateProName'] = 'Name,Tknvl,ConsumeMoney,SndRul,SDt,EDt,Brf,UptDtt'
                         response=requests.post(url=manage['url'] % '/Tkn/Update',data=data,headers=headers)
                         response_json = comm_way.response_dispose(response.json())
                         print(response_json['Message'])
@@ -942,4 +1024,18 @@ class Test_ticket_seed():
                         assert response_json['Success'] == True
                 except:
                         raise
+        # 获取单个券种
+        def test_get_ticket_seed(self,headers,manage,ticket_seed_response_data):
+                data={}
+                try:
+                        data['CpnID'] = manage['CpnID']
+                        data['TknID'] = ticket_seed_response_data['tknID']
+                        response=requests.post(url=manage['url'] % '/Tkn/Get',data=data,headers=headers)
+                        response_json = comm_way.response_dispose(response.json())
+                        print(response_json['Message'])
+                        assert response.status_code == 200
+                        assert response_json['Success'] == True
+                        print(response_json['Data']['Data'])
+                except:
+                        raise 
 

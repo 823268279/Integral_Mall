@@ -18,260 +18,75 @@
 # #     print(flow.response.text)           #响应内容
 
 
-# import random
-
-# import sqlite3
-# import json
-
-
-# conn = sqlite3.connect('./test_data/test.db')
-# cur = conn.cursor()
-
-# # cur.execute('create table viprgst(opnID varchar(40) primary key,unionID varchar(40),tel varchar(40),smsCode varchar(40),crdFaceID varchar(40),crdID varchar(40),crmGuestId varchar(40),idTyp varchar(40),isBind bool,isMember bool,lvlID varchar(40),memberName varchar(40),memberTypID varchar(40),orgID varchar(40),jsCode varchar(40),appID varchar(40),appSecret varchar(40),sessionKey varchar(40),cpnID varchar(40),subID varchar(40),idSource varchar(40),gstID varchar(40),insert_date text)')
-# # cur.execute("select * from sqlite_master")
-# # cur.execute("insert into viprgst(success,errorCode,message,opnID,tel,crdFaceID,crdID,crmGuestId,isBind,isMember,memberTypID,orgID,idSource,gstID) values (True,0,'注册成功','FQAZEJC-kfn-zvluVBWOS-XV',13168867862,88000100000143,188000100000143161,88000100000143,True,True,01,0000,0,195)")
-
-# # cur.execute("PRAGMA table_info(viprgst)")
+import random
+import datetime
+import pymysql
 
 
-
-
-
-
-
-
-
-# data={
-#         'opnID': 'FQAZEJC-kfn-zvluVBWOS-XV1iL',
-#         'unionID': None,
-#         'tel': '13168867862',
-#         'smsCode': None,
-#         'crdFaceID': '88000100000143',
-#         'crdID': '188000100000143161',
-#         'crmGuestId': '88000100000143',
-#         'idTyp': None,
-#         'isBind': True,
-#         'isMember': True,
-#         'lvlID': None,
-#         'memberName': None,
-#         'memberTypID': '01',
-#         'orgID': '0000',
-#         'jsCode': None,
-#         'appID': None,
-#         'appSecret': None,
-#         'sessionKey': None,
-#         'cpnID': None,
-#         'subID': None,
-#         'idSource': 0,
-#         'gstID': 195
-# 		}
-
-# def sql_insert(table,data,primary_key):
-#     import sqlite3
-#     import datetime
-#     conn = sqlite3.connect('./test_data/test.db')
-#     cur = conn.cursor()
-#     for i,n in data.items():
-#         #查询数据进行判断插入主键是否存在
-#         cur.execute("select %s from %s order by insert_date DESC limit 0,1" % (primary_key,table))
-#         x=cur.fetchall()
-#         #存在就更新数据
-#         if x and str(x[0][0])==data['%s' % primary_key]:
-#             cur.execute("update %s set %s='%s' where %s='%s'" % (table,i,n,primary_key,data['%s' % primary_key]))
-#         #不存在就插入数据 
-#         else:
-#             cur.execute("insert into %s(%s) values('%s')" % (table,i,n))
-#             cur.execute("update %s set insert_date='%s' where %s='%s'" % (table,datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S'),primary_key,data['%s' % primary_key]))
-            
-#     cur.close()
-#     conn.commit()
-#     conn.close()
-# insert_sql('viprgst',data,'opnID')
-     
-# def sql_select(table):
-#     data={}
-#     import sqlite3
-#     conn = sqlite3.connect('./test_data/test.db')
-#     cur = conn.cursor()
-
-#     #查询数据
-#     cur.execute("select * from %s order by insert_date DESC limit 0,1" % table)
-#     select_data=cur.fetchone()
-#     # print(len(select_data))
-
-#     #查询列名    
-#     cur.execute("PRAGMA table_info(viprgst)")
-#     row_name=cur.fetchall()
-#     for i in range(len(row_name)):
-#         data['%s' % row_name[i][1]]=select_data[i]
-#     return data
-
-
-
-# select_sql('viprgst')
-
-# import datetime
-
-# # cur.execute("drop table viprgst")
-# # cur.execute("insert into viprgst(%s) values('%s')" % (i,data[i]))
-# # cur.execute("delete from viprgst")
-# # cur.execute("insert into viprgst(opnID,gstID) values('FQAZEJC-kfn-zvluVBWOS-XV','134')")
-# # cur.execute("insert into viprgst(insert_date) values(%s)" % datetime.datetime.now().strftime('%Y-%m-%d-%H-%M'))
-
-# # cur.execute("select * from viprgst  order by insert_date ASC")
-# cur.execute("select * from viprgst order by insert_date DESC")
-# # cur.execute("delete from viprgst where insert_date is NULL")
-
-# # cur.execute("update viprgst set tel='232323232' where opnID ='FQAZEJC-kfn-zvluVBWOS-XV'")
-# z=cur.fetchall()
-# # print(z)
-
-
-# cur.close()
-# conn.commit()
-# conn.close()
-
-
-
-
-
+def sql_insert(table,data,id):
+    conn = pymysql.connect('localhost','root','root','newcrm')
+    cur = conn.cursor()
+    try:
+        # create table
+        sql="create table %s(%s varchar(40) primary key)" % (table,'insert_date')
+        cur.execute(sql)
+        # for add col
+        for i in data:
+            sql="alter table %s add %s varchar(120)" % (table,i)  
+            cur.execute(sql) 
+    except:
+        pass
+    finally:
+        for i,n in data.items():
+            # date desc select first col data whether equal now_date
+            sql="select %s from %s where %s=%s" % (id,table,id,data['%s' % id])
+            cur.execute(sql)
+            x=cur.fetchall()
+            now=datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
+            # exist update data
+            if x and str(x[0][0])==str(data['%s' % id]):
+                sql="update %s set %s='%s' where insert_date='%s'" % (table,i,n,now)
+                cur.execute(sql)
+            # inexistence insert data
+            else:
+                sql="insert into %s(insert_date,%s) values('%s','%s')" % (table,i,now,n)
+                cur.execute(sql)
+    cur.close()
+    conn.commit()
+    conn.close()
 
 
 
 
 
 data={
-	'nickName': None,
-	'name': None,
-	'avt': None,
-	'opnID': 'UTJAXED-pkf-ojgqTYFJY-FG',
-	'unionID': None,
-	'tel': '13286546126',
-	'smsCode': None,
-	'crdFaceID': '88000100000147',
-	'crdID': '188000100000147370',
-	'crmGuestId': '88000100000147',
-	'idTyp': None,
-	'isBind': True,
-	'isMember': True,
-	'lvlID': None,
-	'memberName': None,
-	'memberTypID': '01',
-	'orgID': '0000',
-	'jsCode': None,
-	'appID': None,
-	'appSecret': None,
-	'sessionKey': None,
-	'cpnID': None,
-	'subID': None,
-	'idSource': None,
-	'gstID': 199,
-	'vipTpStt': None
+	'tknTpName': '电子券',
+	'tknFrm': 0,
+	'tknNtu': 0,
+	'sttName': None,
+	'rcvRulName': None,
+	'cpnID': '0001',
+	'tknID': '667056',
+	'name': '消费338,即可使用',
+	'tknvl': 55,
+	'consumeMoney': 338,
+	'tknImg': None,
+	'tknDsc': None,
+	'tknTpID': '01',
+	'sndRul': '消费大于等于338,即可使用面额为55的优惠券',
+	'rcvRul': None,
+	'vipTpID': None,
+	'brfId': None,
+	'sDt': '2020-07-10 15:18:34',
+	'eDt': '2020-07-13 15:18:34',
+	'tStt': 'F',
+	'useSDy': 0,
+	'useADy': 0,
+	'tknSdt': None,
+	'tknEdt': None,
+	'rjcStt': 'F',
+	'brf': 'apitest update',
+	'impCRM': 0,
+	'stt': 2,
+	'uptDtt': '2020-07-10 15:18:34'
 }
-
-
-def zz(table,data):
-    import sqlite3
-    import datetime
-    conn = sqlite3.connect('./test_data/test.db')
-    cur = conn.cursor()
-    sql="create table %s(%s varchar(40))" % (table,'insert_date')
-    cur.execute(sql)
-    for i in data:
-        print(i)
-        sql="alter table %s add %s varchar(40)" % (table,i)  
-        cur.execute(sql) 
-    cur.close()
-    conn.commit()
-    conn.close()
-# zz('vip',data)
-
-
-
-def sql_insert(table,data):
-    import pymysql
-    import datetime
-    #与数据库建立连接
-    conn = pymysql.connect('localhost','root','root','newcrm')
-    cur = conn.cursor()
-    try:
-        #创建表
-        sql="create table %s(%s varchar(40) primary key)" % (table,'insert_date')
-        cur.execute(sql)
-        #循环添加列
-        for i in data:
-            sql="alter table %s add %s varchar(40)" % (table,i)  
-            cur.execute(sql) 
-    except:
-        pass
-    finally:
-        for i,n in data.items():
-            #查询数据进行判断插入主键是否存在
-            sql="select insert_date from %s order by insert_date DESC limit 0,1" % (table)
-            cur.execute(sql)
-            x=cur.fetchall()
-            now=datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
-            #存在就更新数据
-            if x and str(x[0][0])==str(now):
-                sql="update %s set %s='%s' where insert_date='%s'" % (table,i,n,now)
-                cur.execute(sql)
-            #不存在就插入数据 
-            else:
-                sql="insert into %s(insert_date) values('%s')" % (table,now)
-                cur.execute(sql)
-    cur.close()
-    conn.commit()
-    conn.close()
-
-
-
-
-
-# sql_insert('vip',data)
-
-    
-            
-def sql_select(table):
-    data={}
-    import sqlite3
-    conn = sqlite3.connect('./test_data/test.db')
-    cur = conn.cursor()
-
-    #查询数据
-    cur.execute("select * from %s order by insert_date DESC limit 0,1" % table)
-    select_data=cur.fetchone()
-
-    #查询列名    
-    cur.execute("PRAGMA table_info(%s)" % table)
-    row_name=cur.fetchall()
-    for i in range(len(row_name)):
-        data['%s' % row_name[i][1]]=select_data[i]
-    return data
-
-# z=sql_select('prakrule')
-# print(z)
-import sqlite3
-
-
-conn=sqlite3.connect('./test_data/test.db')
-cur=conn.cursor()
-
-
-
-# cur.execute("delete from parking")
-# cur.execute("drop table viprgst")
-# cur.execute("select * from register_response")
-cur.execute("select * from sqlite_master")
-# cur.execute("drop table vipzy")
-# cur.execute("select * from prakrule")
-# x=cur.fetchall()
-
-# print(x)
-
-
-cur.close()
-conn.commit()
-conn.close()
-
-
-

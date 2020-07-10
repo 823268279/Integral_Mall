@@ -154,7 +154,7 @@ class Test_index_menber_data():
                         raise
 
         #获取某个会员的全部卡
-        def test_select_menber_allcard(self,headers,menber,menber_register_response_data):  
+        def test_get_menber_allcard(self,headers,menber,menber_register_response_data):  
                 data={}
                 try:
                         data['CpnID'] = menber['CpnID']
@@ -173,8 +173,8 @@ class Test_index_menber_data():
                 except:
                         raise
 
-        #根据卡账户获取单张卡
-        def test_select_vipcard_crdid(self,headers,menber,menber_register_response_data):
+        # 根据卡账户获取单张卡
+        def test_get_vipcard_crdid(self,headers,menber,menber_register_response_data):
                 data={}
                 try:
                         data['CpnID'] = menber['CpnID']
@@ -187,9 +187,27 @@ class Test_index_menber_data():
                         print(response_json['Data']['Data'])
                 except:
                         raise
-
-        #获取某个会员积分明细
-        def test_select_integral(self,headers,menber,menber_register_response_data):  
+        # 获取会员积分统计
+        def test_get_integral_statistics(self,headers,manage,menber_register_response_data):
+                data={}
+                try:
+                        data['CpnID'] = manage['CpnID']
+                        data['VipID'] = ''
+                        data['Tel'] =''
+                        data['Name'] = ''
+                        data['PageIndex'] = '1'
+                        data['PageSize'] = '10'
+                        data['Sort'] = ''
+                        response=requests.post(url=manage['url'] % '/Intg/GetIntgPage',data=data,headers=headers)
+                        response_json = comm_way.response_dispose(response.json())
+                        print(response_json['Message'])
+                        assert response.status_code == 200
+                        assert response_json['Success'] == True
+                        print(response_json['Data']['Data'])
+                except:
+                        raise
+        # 获取某个会员积分明细
+        def test_get_integral(self,headers,menber,menber_register_response_data):  
                 data = {}
                 try:
                         data['CpnID'] = menber['CpnID']
@@ -210,7 +228,7 @@ class Test_index_menber_data():
                         raise
 
         #查询某个会员总积分
-        def test_select_menber_sum_integral(self,headers,menber,menber_register_response_data):  
+        def test_get_menber_sum_integral(self,headers,menber,menber_register_response_data):  
                 data={}
                 try:
                         data['CpnID'] = menber['CpnID']
@@ -260,7 +278,7 @@ def test_menber_untie(headers,menber):
 
 
 
-class Test_upload_ticked():
+class Test_upload_ticket():
         #上传小票到s3
         def test_upload_ticket_s3(self,headers,menber,get_s3_ticket):   
                 data={}
@@ -389,13 +407,14 @@ class Test_integral_shopping_mail():
                 try:
                         data['CpnID'] = menber['CpnID']
                         data['SubID'] = menber['SubID']
-                        data['SortType'] = '2'    #排序类型[1：默认、热门倒序;2：积分从小到大；3：积分从大到小；4:上架时间]
-                        data['MinIntg'] = ''
-                        data['MaxIntg'] = ''
-                        data['PageIndex'] = '1'
-                        data['PageSize'] = '10'
+                        data['SortType'] = '0'    #排序类型[1：默认、热门倒序;2：积分从小到大；3：积分从大到小；4:上架时间]
+                        data['MinIntg'] = '0'
+                        data['MaxIntg'] = '1000'
+                        data['PageIndex'] = 1
+                        data['PageSize'] = 10
                         response=requests.post(url=menber['url'] % '/IntgShop/QueryGoodsList',data=data,headers=headers)
                         response_json = comm_way.response_dispose(response.json())
+                        print(response_json)
                         assert response.status_code == 200
                         assert response_json['Success'] == True
                 except:
@@ -403,6 +422,91 @@ class Test_integral_shopping_mail():
 
 
 
+# 券账户
+class Test_menber_ticket_account():
+        # 发送优惠券
+        def test_send_ticket(self,headers,menber,menber_register_response_data,ticket_seed_response_data):
+                data={}
+                try:
+                        data['CpnID'] = menber['CpnID']
+                        data['CrdNos'] = menber_register_response_data['crdFaceID']        # 会员卡面号集合
+                        data['TknID'] = ticket_seed_response_data['tknID']         # 券种编号
+                        data['TknAmt'] = '30'        # 券金额
+                        data['SendCount'] = 1     # 发送券的数量，默认发送一张
+                        data['IsSendMsg'] = 0    # 是否发送模板消息(1-是，0-否，默认是)
+                        print(data)
+                        response=requests.post(url=menber['url'] % '/Dtkt/SendTknAcc',data=data,headers=headers)
+                        response_json = comm_way.response_dispose(response.json())
+                        print(response_json)
+                        print(response_json['Message'])
+                        assert response.status_code == 200
+                        assert response_json['Success'] == True
+                except:
+                        raise
+        # 获取用户各个券类型下的优惠券数量
+        def test_get_user_ticket_seed_number(self,headers,menber,menber_register_response_data):
+                data={}
+                try:
+                        data['CpnID'] = menber['CpnID']
+                        data['SubID'] = menber['SubID']     
+                        data['VipID'] = menber_register_response_data['crdFaceID']         
+                        data['CrdID'] = menber_register_response_data['crdID']  
+                        response=requests.post(url=menber['url'] % '/Dtkt/GetDtktTypeCount',data=data,headers=headers)
+                        response_json = comm_way.response_dispose(response.json())
+                        print(response_json['Message'])
+                        assert response.status_code == 200
+                        assert response_json['Success'] == True
+                        if response_json['Data']['Data']:
+                                for i in response_json['Data']['Data']:
+                                        print(i)
+                        else:
+                                print('没有券类型/优惠券')
+                except:
+                        raise
+        # 分页获取当前用户的优惠券
+        def test_get_user_ticket_page(self,headers,menber,menber_register_response_data):
+                data={}
+                try:
+                        data['CpnID'] = menber['CpnID']
+                        data['VipID'] = menber_register_response_data['crdFaceID']        
+                        data['CrdID'] = menber_register_response_data['crdID']        
+                        data['TknIDS'] = ''    # 券种ID
+                        data['PgIndex'] = 1       
+                        data['PgSize'] = 10     
+                        response=requests.post(url=menber['url'] % '/Dtkt/GetDtkt',data=data,headers=headers)
+                        response_json = comm_way.response_dispose(response.json())
+                        print(response_json['Message'])
+                        assert response.status_code == 200
+                        assert response_json['Success'] == True
+                        if response_json['Data']['DtktList']:
+                                for i in response_json['Data']['DtktList']:
+                                        print(i)
+                        else:
+                                print('没有优惠券')
+                except:
+                        raise
+        # 查询用户已使用或已过期的优惠券
+        def test_get_user_past_ticket(self,headers,menber,menber_register_response_data):
+                data={}
+                try:
+                        data['CpnID'] = menber['CpnID']
+                        data['VipID'] = menber_register_response_data['crdFaceID']        
+                        data['CrdID'] = menber_register_response_data['crdID']        
+                        data['LastUnionID'] = ''    
+                        data['pageSize'] = '10'       
+                        data['QueryType'] = 0     #查询类型[0:全部，1:已使用，2:过期，默认:0]
+                        response=requests.post(url=menber['url'] % '/Dtkt/GetUsedDtkt',data=data,headers=headers)
+                        response_json = comm_way.response_dispose(response.json())
+                        print(response_json['Message'])
+                        assert response.status_code == 200
+                        assert response_json['Success'] == True
+                        if response_json['Data']['UsedDtktList']:
+                                for i in response_json['Data']['UsedDtktList']:
+                                        print(i)
+                        else:
+                                print('没有过期优惠券')
+                except:
+                        raise
 
 
 
