@@ -34,7 +34,7 @@ class Test_login():
                         response_json = comm_way.response_dispose(response.json())
                         print(response_json['Message'])
                         assert response.status_code == 200
-                        assert response_json['Success'] == True
+                        assert response_json['Success'] == False
                         
                 except:
                         raise
@@ -54,7 +54,7 @@ class Test_login():
 
 class Test_select_vipdata():
         #查询会员资料分页
-        def test_select_menber_data_page(self,headers,manage):
+        def test_get_menber_data_page(self,headers,manage):
                 data={}
                 try:
                         data['CpnID'] = manage['CpnID']
@@ -78,7 +78,7 @@ class Test_select_vipdata():
                 except:
                         raise
         #根据会员姓名查询会员数据
-        def test_select_menber_data_page_name(self,headers,manage,menber_register_response_data):
+        def test_get_menber_data_page_name(self,headers,manage,menber_register_response_data):
                 data={}
                 try:
                         data['CpnID'] = manage['CpnID']
@@ -102,7 +102,7 @@ class Test_select_vipdata():
                 except:
                         raise
         #根据会员卡面号查询会员数据
-        def test_select_menber_data_page_vipid(self,headers,manage,menber_register_response_data):
+        def test_get_menber_data_page_vipid(self,headers,manage,menber_register_response_data):
                 data={}
                 try:
                         data['CpnID'] = manage['CpnID']
@@ -129,7 +129,7 @@ class Test_select_vipdata():
   
 class Test_menber_data():
         #查询会员单个资料
-        def test_select_menber_data(self,headers,manage,menber_register_response_data):
+        def test_get_menber_data(self,headers,manage,menber_register_response_data):
                 data={}
                 try:
                         data['CpnID'] = manage['CpnID']
@@ -329,7 +329,7 @@ class Test_parking():
                         raise
 
         #获取停车场数据分页
-        def test_select_parking_data_page(self,headers,manage):
+        def test_get_parking_data_page(self,headers,manage):
                 data={}
                 try:
                         data['CpnID'] = manage['CpnID']
@@ -344,10 +344,10 @@ class Test_parking():
                         print(response_json['Message'])
                         assert response.status_code == 200
                         assert response_json['Success'] == True                       
-                        # mysql insert response data
-                        comm_way.sql_insert('parking_response',response_json['Data']['PageDataList'][0])
                         if response_json['Data']['PageDataList']:
                                 for i in response_json['Data']['PageDataList']:
+                                        # mysql insert response data
+                                        comm_way.sql_insert('parking_response',response_json['Data']['PageDataList'][0])
                                         print(i)
                         else:
                                 print('没有停车场')
@@ -383,7 +383,7 @@ class Test_parking():
                 except:
                         raise
         #获取单个停车场数据
-        def test_select_parking_data(self,headers,manage,parking_page_data):
+        def test_get_parking_data(self,headers,manage,parking_page_data):
                 data={}
                 try:
                         data['CpnID']=manage['CpnID']
@@ -444,10 +444,10 @@ class Test_parking():
                         print(response_json['Message'])
                         assert response.status_code == 200
                         assert response_json['Success'] == True                       
-                        # mysql insert response data
-                        comm_way.sql_insert('parking_rule_response',response_json['Data']['PageDataList'][0])
                         if response_json['Data']['PageDataList']:
                                 for i in response_json['Data']['PageDataList']:
+                                        # mysql insert response data
+                                        comm_way.sql_insert('parking_rule_response',response_json['Data']['PageDataList'][0])
                                         print(i)
                         else:
                                 print('没有停车场缴费规则')
@@ -600,11 +600,11 @@ class Test_signin():
                         response_json = comm_way.response_dispose(response.json())
                         print(response_json['Message'])
                         assert response.status_code == 200
-                        assert response_json['Success'] == True  
-                        # mysql insert response data
-                        comm_way.sql_insert('signin_rule_response',response_json['Data']['PageDataList'][0])                      
+                        assert response_json['Success'] == True                       
                         if response_json['Data']['PageDataList']:
                                 for i in response_json['Data']['PageDataList']:
+                                        # mysql insert response data
+                                        comm_way.sql_insert('signin_rule_response',response_json['Data']['PageDataList'][0]) 
                                         print(i)
                         else:
                                 print('没有签到规则')
@@ -745,16 +745,16 @@ class Test_advert():
                         print(response_json['Message'])
                         assert response.status_code == 200
                         assert response_json['Success'] == True                       
-                        # mysql insert response data
-                        comm_way.sql_insert('advert_position_response',response_json['Data']['PageDataList'][0])
                         if response_json['Data']['PageDataList']:
                                 for i in response_json['Data']['PageDataList']:
+                                        # mysql insert response data
+                                        comm_way.sql_insert('advert_position_response',response_json['Data']['PageDataList'][0])
                                         print(i)
                         else:
                                 print('没有广告位')
                 except:
                         raise
-        # 修改广告位 
+        # # 修改广告位 
         # def test_update_advert_position(self,now_time,headers,manage,advert_position_response_data,upload_advert_response_data):
         #         data={}
         #         data_sublist={}
@@ -806,9 +806,9 @@ class Test_advert():
         #                 response_json = comm_way.response_dispose(response.json())
         #                 print(response_json)
         #                 print(response_json['Message'])
-        #                 # assert response.status_code == 200
+        #                 assert response.status_code == 200
         #                 assert response_json['Success'] == True     
-# #             except:
+        #         except:
  
         #                 raise
         # 获取单个广告位
@@ -817,8 +817,10 @@ class Test_advert():
                 try:
                         data['CpnID'] = manage['CpnID']
                         data['id'] = advert_position_response_data['id']
+                        print(data)
                         response=requests.post(url=manage['url'] % '/AdPosi/Get',data=data,headers=headers)
                         response_json = comm_way.response_dispose(response.json())
+                        print(response_json)
                         assert response.status_code == 200
                         assert response_json['Success'] == True
                         list=[]
@@ -838,9 +840,9 @@ class Test_advert():
                         data['ShwPosi'] = '1'
                         response=requests.post(url=menber['url'] % '/AdPosi/GetAdPosiByMobileet',data=data,headers=headers)
                         response_json = comm_way.response_dispose(response.json())
+                        print(response_json['Message'])
                         assert response.status_code == 200
                         assert response_json['Success'] == True
-                        print(response_json)
                         list=[]
                         list.append(response_json['Data']['AdPosi'])
                         for i in list:
@@ -871,16 +873,16 @@ class Test_ticket_type():
                         assert response.status_code == 200
                         assert response_json['Success'] == True
                         print(response_json)
-                        # mysql insert response
-                        comm_way.sql_insert('ticket_type_response',response_json['Data']['PageDataList'][0])
                         if response_json['Data']['PageDataList']:
                                 for i in response_json['Data']['PageDataList']:
+                                        # mysql insert response
+                                        comm_way.sql_insert('ticket_type_response',response_json['Data']['PageDataList'][0])
                                         print(i)
                         else:
                                 print('没有券类型')
                 except:
                         raise
-        # 修改券类型分页
+        # 修改券类型
         def test_update_ticket_type(self,headers,manage,ticket_type_response_data,now_time):
                 print(ticket_type_response_data)
                 data={}
@@ -979,10 +981,10 @@ class Test_ticket_seed():
                         print(response_json['Message'])
                         assert response.status_code == 200
                         assert response_json['Success'] == True
-                        # mysql insert response
-                        comm_way.sql_insert('ticket_seed_response',response_json['Data']['PageDataList'][0])
                         if response_json['Data']['PageDataList']:
                                 for i in response_json['Data']['PageDataList']:
+                                        # mysql insert response
+                                        comm_way.sql_insert('ticket_seed_response',response_json['Data']['PageDataList'][0])
                                         print(i)
                         else:
                                 print('没有券种')

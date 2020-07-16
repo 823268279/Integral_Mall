@@ -186,6 +186,10 @@ def car_data_random():
     return data
 
 
+# mysql select table：organization_response
+@pytest.fixture(scope='session')
+def organization_response_data():
+    return comm_way.sql_select('organization_response')
 
 # mysql select table：register_request
 @pytest.fixture(scope='session')

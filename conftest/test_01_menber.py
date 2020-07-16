@@ -20,11 +20,71 @@ comm_way=Way()
 #         except:
 #                 raise
 
-        
+
+
+class Test_company_organization():
+        # #新增企业机构
+        # def test_add_company_organization(self,headers,manage,now_time):
+        #         data={}
+        #         try:
+        #                 data['CpnID'] = manage['CpnID']
+        #                 data['OrgID'] = '1002'
+        #                 data['Name'] = '大卖场二'
+        #                 data['HlpCd'] = ''
+        #                 data['PrtID'] = ''
+        #                 data['Type'] = '004'
+        #                 data['SubType'] = '1'
+        #                 data['BrchID'] = ''
+        #                 data['City'] = '绵阳'
+        #                 data['Lnkr'] =''
+        #                 data['Adr'] = '绵阳大道180号'
+        #                 data['Tel'] = ''
+        #                 data['Phone'] = '18132253341'
+        #                 data['Fax'] = ''
+        #                 data['Lvl'] = '1'
+        #                 data['Stt'] = '0'
+        #                 data['EndFlg'] = 'F'
+        #                 data['Intgact'] = 'F'
+        #                 data['IsMakeCrd'] = '1'
+        #                 data['IsSendCrd'] = '1'
+        #                 data['Brf'] = 'apitest'
+        #                 data['UptDtt'] = now_time['ymd_hms']
+        #                 response=requests.post(url=manage['url'] % '/CpnOrg/AddParkOrder',data=data,headers=headers)
+        #                 response_json = comm_way.response_dispose(response.json())
+        #                 print(response_json['Message'])
+        #                 assert response.status_code == 200
+        #                 assert response_json['Success'] == True
+        #         except:
+        #                 raise
+
+
+
+        #获取企业机构
+        def test_get_company_organization_page(self,headers,menber):
+                data={}
+                try:
+                        data['CpnID'] = menber['CpnID']
+                        data['SubID'] = menber['SubID']
+                        response=requests.post(url=menber['url'] % '/Guest/GetShp',data=data,headers=headers)
+                        response_json = comm_way.response_dispose(response.json())
+                        print(response_json['Message'])
+                        assert response.status_code == 200
+                        assert response_json['Success'] == True
+                        if response_json['Data']['Data']:
+                                for i in response_json['Data']['Data']:
+                                        # mysql insert organization_response
+                                        comm_way.sql_insert('organization_response',response_json['Data']['Data'][-1])
+                                        print(i)
+                        else:
+                                print('没有机构')
+                except:
+                        raise
+
+
 
 
 #会员注册   
-def test_menber_register(headers,menber,menber_data_random):
+def test_menber_register(headers,menber,menber_data_random,organization_response_data):
         data={}
         try:
                 data['CpnID'] = menber['CpnID']
@@ -34,7 +94,8 @@ def test_menber_register(headers,menber,menber_data_random):
                 data['Tel'] = menber_data_random['Tel']
                 data['Brth'] = menber_data_random['Brth']
                 data['SMSCode'] = '0000'
-                data['OrgID'] = ''
+                data['OrgID'] = '0000'
+                data['UseOrgID']= organization_response_data['orgID']
                 data['IDSource'] = '100'
                 data['UserSource'] = ''
                 data['Eml'] = ''
@@ -56,17 +117,15 @@ def test_menber_register(headers,menber,menber_data_random):
                 print(response_json['Message'])
                 assert response.status_code == 200
                 assert response_json['Success'] == True
-                # mysql insert response data
-                comm_way.sql_insert('register_response',response_json['Data']['Data'][0])
                 if response_json['Data']['Data']:
                         for i in response_json['Data']['Data']:
+                                # mysql insert response data
+                                comm_way.sql_insert('register_response',response_json['Data']['Data'][0])
                                 print(i)
                 else:
                         print('没有会员')
         except:
                 raise
-
-
 
 class Test_dynamic_code():
         #生成会员动态码
@@ -200,6 +259,7 @@ class Test_index_menber_data():
                         data['Sort'] = ''
                         response=requests.post(url=manage['url'] % '/Intg/GetIntgPage',data=data,headers=headers)
                         response_json = comm_way.response_dispose(response.json())
+                        print(response_json)
                         print(response_json['Message'])
                         assert response.status_code == 200
                         assert response_json['Success'] == True
@@ -249,7 +309,7 @@ def test_get_wifi_password(headers,menber):
                 data['CpnID'] = menber['CpnID']
                 data['SubID'] = menber['SubID']
                 response=requests.post(url=menber['url'] % '/Guest/GetWiFi',data=data,headers=headers)
-                response_json = comm_way.response_dispose(response.json())
+                response_json = response.json()
                 assert response.status_code == 200
                 if response_json:
                         for i in response_json:
@@ -400,25 +460,6 @@ class Test_car():
                 except:
                         raise
 
-#积分商城
-class Test_integral_shopping_mail():
-        def test_commodity_list(self,headers,menber):
-                data={}
-                try:
-                        data['CpnID'] = menber['CpnID']
-                        data['SubID'] = menber['SubID']
-                        data['SortType'] = '0'    #排序类型[1：默认、热门倒序;2：积分从小到大；3：积分从大到小；4:上架时间]
-                        data['MinIntg'] = '0'
-                        data['MaxIntg'] = '1000'
-                        data['PageIndex'] = 1
-                        data['PageSize'] = 10
-                        response=requests.post(url=menber['url'] % '/IntgShop/QueryGoodsList',data=data,headers=headers)
-                        response_json = comm_way.response_dispose(response.json())
-                        print(response_json)
-                        assert response.status_code == 200
-                        assert response_json['Success'] == True
-                except:
-                        raise
 
 
 
