@@ -65,7 +65,7 @@ class Test_company_organization():
                 try:
                         data['CpnID'] = menber['CpnID']
                         data['SubID'] = menber['SubID']
-                        response=requests.post(url=menber['url'] % '/Guest/GetShp',data=data,headers=headers)
+                        response=requests.post(url=menber['url'] % '/Guest/GetCpnOrg',data=data,headers=headers)
                         response_json = comm_way.response_dispose(response.json())
                         print(response_json['Message'])
                         assert response.status_code == 200
@@ -413,6 +413,7 @@ class Test_car():
                         print(response_json['Message'])
                         assert response.status_code == 200
                         assert response_json['Success'] == True
+                        # mysql insert response data
                         comm_way.sql_insert('car_data_response',response_json['Data']['Data'][0])
                         
                 except:
@@ -450,6 +451,7 @@ class Test_car():
                         data['GstID'] = menber_register_response_data['gstID']
                         response=requests.post(url=menber['url'] % '/GstCar/GetGstCar',data=data,headers=headers)
                         response_json = comm_way.response_dispose(response.json())
+                        print(response_json)
                         assert response.status_code == 200
                         assert response_json['Success'] == True
                         if response_json['Data']:
@@ -472,13 +474,11 @@ class Test_menber_ticket_account():
                         data['CpnID'] = menber['CpnID']
                         data['CrdNos'] = menber_register_response_data['crdFaceID']        # 会员卡面号集合
                         data['TknID'] = ticket_seed_response_data['tknID']         # 券种编号
-                        data['TknAmt'] = '30'        # 券金额
+                        data['TknAmt'] = ticket_seed_response_data['tknvl']        # 券金额
                         data['SendCount'] = 1     # 发送券的数量，默认发送一张
                         data['IsSendMsg'] = 0    # 是否发送模板消息(1-是，0-否，默认是)
-                        print(data)
                         response=requests.post(url=menber['url'] % '/Dtkt/SendTknAcc',data=data,headers=headers)
                         response_json = comm_way.response_dispose(response.json())
-                        print(response_json)
                         print(response_json['Message'])
                         assert response.status_code == 200
                         assert response_json['Success'] == True

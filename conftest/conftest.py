@@ -164,7 +164,7 @@ def get_s3_advert():
     data['ticket']={'file': open('../img/advert_one.jpg', 'rb')}
     return data
 
-#随机停车场信息
+# random parking data
 @pytest.fixture(scope='function')   
 def parking_data_random():
     data={}
@@ -174,7 +174,7 @@ def parking_data_random():
     data['Tel']='13%s%s' % (sum(random.sample(range(10000,100000),1)),sum(random.sample(range(1000,10000),1)))
     return data
 
-#随机车辆信息
+# random car data
 @pytest.fixture(scope='function') 
 def car_data_random():
     a = ['法拉利','兰博基尼','大众','丰田','马自达','别克','雪佛兰','福特','标志','现代','奔驰','奥迪','宝马','比亚迪']
@@ -184,6 +184,26 @@ def car_data_random():
     data['CarID'] = '川Y.%s%s%s'% (random.choice(b),random.choice(b),sum(random.sample(range(300),3)))
     data['carTp'] = random.choice(a)
     return data
+
+# mysql random select table:commodity_data
+@pytest.fixture(scope='session')    
+def commodity_data_random():
+    return comm_way.sql_select_commodity_data('commodity_data')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 # mysql select table：organization_response
@@ -254,3 +274,8 @@ def ticket_type_response_data():
 @pytest.fixture(scope='session')    
 def ticket_seed_response_data():
     return comm_way.sql_select('ticket_seed_response')
+
+# mysql select table:ticket_seed_response
+@pytest.fixture(scope='session')    
+def commodity_response_data():
+    return comm_way.sql_select('commodity_data_response')

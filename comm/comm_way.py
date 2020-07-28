@@ -23,7 +23,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.utils import parseaddr, formataddr
 import pymysql
-
+import sqlite3
 
 class Way():
     # response dispose to capitalize
@@ -35,8 +35,13 @@ class Way():
 
     # sql insert 
     def sql_insert(self,table,data):
+        # sqlite3 connect
+        # conn = sqlite3.connect('../test_data/test.db')
+
+        # pymysql connect
         conn = pymysql.connect('localhost','root','root','newcrm')
         cur = conn.cursor()
+        
         try:
             # create table
             sql="create table %s(%s varchar(40) primary key)" % (table,'insert_date')
@@ -70,69 +75,66 @@ class Way():
     # sql select 
     def sql_select(self,table):
         data={}
+        # sqlite3 connect
+        # conn = sqlite3.connect('../test_data/test.db')
+
+        # pymysql connect
         conn = pymysql.connect('localhost','root','root','newcrm')
+
         cur = conn.cursor()
         # date desc select first row
         sql="select * from %s order by insert_date DESC limit 0,1" % table
         cur.execute(sql)
         select_data=cur.fetchone()
-        # sqlinte3 select col_naame
+
+        # sqlite3 select col_naame
         # sql="PRAGMA table_info(%s)" % table
+
         # pymysql select col_naame
         sql="select COLUMN_NAME from information_schema.COLUMNS where table_name = '%s'" % table
+
         cur.execute(sql)
         row_name=cur.fetchall()
         for i in range(len(row_name)):
             # pymysql
             data['%s' % row_name[i][0]]=select_data[i]
-            # sqlinte3
+
+            # sqlite3
+            # data['%s' % row_name[i][1]]=select_data[i]
+
+        cur.close()
+        conn.close()
+        return data
+        
+    def sql_select_commodity_data(self,table):
+        data={}
+        # pymysql connect
+        conn = pymysql.connect('localhost','root','root','newcrm')
+        cur = conn.cursor()
+
+        # select row sum
+        sql="select count(*) from commodity_data"
+        cur.execute(sql)
+        select_sum_row=cur.fetchone()
+        # random select one row
+        sql="select * from %s limit %s,1" % (table,sum(random.sample(range(select_sum_row[0]),1)))
+        cur.execute(sql)
+        select_data=cur.fetchone()
+        
+        # pymysql select col_naame
+        sql="select COLUMN_NAME from information_schema.COLUMNS where table_name = '%s'" % table
+
+        cur.execute(sql)
+        row_name=cur.fetchall()
+        for i in range(len(row_name)):
+            # pymysql
             data['%s' % row_name[i][0]]=select_data[i]
+
+        cur.close()
+        conn.close()
         return data
 
 
-
-    # create excel
-    def create_excel_file(self):
-        # global __file__
-        # now = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M')
-        # __file__ = r'../test_data/%s_test_data.xlsx' % now
-        __file__ = r'../test_data/2020-05-09-09-27_test_data.xlsx'
-        workbook=xlsxwriter.Workbook(__file__)
-        workbook.add_worksheet('Sheet1')
-        workbook.close()
-    # write data
-    def xlsx_write_way(self,x,y):
-        __file__ = r'../test_data/2020-05-09-09-27_test_data.xlsx'
-        wb=load_workbook(filename=__file__)
-        sheet1=wb['Sheet1']
-        # adjustment col width
-        sheet1.column_dimensions['A'].width = 20
-        sheet1.column_dimensions['B'].width = 30
-        sheet1.column_dimensions['C'].width = 20
-        sheet1.column_dimensions['D'].width = 30
-        sheet1.column_dimensions['E'].width = 50
-        sheet1.column_dimensions['F'].width = 50
-        sheet1.column_dimensions['G'].width = 30
-        # adjustment row height
-        for i in range(1,2):
-                sheet1.row_dimensions[i].height = 80
-        # align center and auto line feed
-        for i in range(1,200):
-                sheet1['A%s' % i ].alignment = Alignment(horizontal='center', vertical='center',wrap_text=True)
-                sheet1['B%s' % i ].alignment = Alignment(horizontal='center', vertical='center',wrap_text=True)
-                sheet1['C%s' % i ].alignment = Alignment(horizontal='center', vertical='center',wrap_text=True)
-                sheet1['D%s' % i ].alignment = Alignment(horizontal='center', vertical='center',wrap_text=True)
-                sheet1['E%s' % i ].alignment = Alignment(horizontal='center', vertical='center',wrap_text=True)
-                sheet1['F%s' % i ].alignment = Alignment(horizontal='center', vertical='center',wrap_text=True)
-                sheet1['G%s' % i ].alignment = Alignment(horizontal='center', vertical='center',wrap_text=True)
-        # write table_head
-        table_head=["test_case","test_name","request_way","request_url","request_body","response_body","备注"]
-        for i in range(1,len(table_head)+1):
-                sheet1.cell(1,i).value=table_head[i-1]
-        # wirte data rule
-        for i in range(len(y)):
-                sheet1.cell(x,2+i).value=y[i]  
-        wb.save(__file__)
 
 # get new html report 
 class Report():  
@@ -179,6 +181,5 @@ class Smtp():
         server.quit()
 
 
-# z=Way().sql_select('car_data_response')
-# print(z)
-
+comm_way=Way().sql_select_commodity_data('commodity_data')
+print(comm_way)

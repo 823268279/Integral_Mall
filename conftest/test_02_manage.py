@@ -305,21 +305,22 @@ class Test_parking():
                 try:
                         data['CpnID'] = manage['CpnID']
                         data['ID'] = "0"
-                        data['ParkID'] = parking_data_random['ParkID']
-                        data['PayExplain'] = "apitest"
-                        data['Tel'] = parking_data_random['Tel']
-                        data['IsSupWXPay'] = 0
-                        data['IsSupIntg'] = 0
-                        data['IsSupIntgAuto'] = 0
-                        data['ParkUrl'] = "0"
-                        data['LoginUrl'] = "0"
-                        data['BllNoUrl'] = "0"
-                        data['ParkUser'] = "0"
-                        data['ParkPwd'] = "0"
+                        data['ParkID'] = parking_data_random['ParkID']          #停车场编号
+                        data['PayExplain'] = "apitest"                          #缴费说明
+                        data['Tel'] = parking_data_random['Tel']                #故障热线
+                        data['IsSupWXPay'] = 0                                  #是否支持微信支持(0-支持，1-不支持)
+                        data['IsSupIntg'] = 0                                   #是否支持积分(0-支持，1-不支持)
+                        data['IsSupIntgAuto'] = 0                               #是否支持积分自动扣除(0-支持，1-不支持)
+                        data['ParkUrl'] = "0"                                    #停车系统url
+                        data['LoginUrl'] = "0"                                   #获取令牌url
+                        data['BllNoUrl'] = "0"                                   #获取订单号url
+                        data['ParkUser'] = "0"                                   #账号
+                        data['ParkPwd'] = "0"                                    #密码
                         data['ParkKey'] = "0"
                         data['SecretKey'] = "0"
                         data['Uptr'] = manage['username']
                         data['UptDtt'] = now_time['ymd_hms']
+                        print(data)
                         response=requests.post(url=manage['url'] % '/Park/AddParkConfig',data=data,headers=headers)
                         response_json = comm_way.response_dispose(response.json())
                         print(response_json['Message'])
@@ -339,15 +340,16 @@ class Test_parking():
                         data['pageIndex'] = 10
                         data['pageSize'] = 1
                         data['sort'] = "uptDtt desc"
+
                         response=requests.post(url=manage['url'] % '/Park/GetParkConfigPage',data=data,headers=headers)
                         response_json = comm_way.response_dispose(response.json())
                         print(response_json['Message'])
                         assert response.status_code == 200
                         assert response_json['Success'] == True                       
                         if response_json['Data']['PageDataList']:
+                                # mysql insert response data
+                                comm_way.sql_insert('parking_response',response_json['Data']['PageDataList'][0])
                                 for i in response_json['Data']['PageDataList']:
-                                        # mysql insert response data
-                                        comm_way.sql_insert('parking_response',response_json['Data']['PageDataList'][0])
                                         print(i)
                         else:
                                 print('没有停车场')
@@ -397,6 +399,7 @@ class Test_parking():
                 except:
                         raise
 
+class Test_park_rule():
         #添加停车场缴费规则
         def test_add_parking_rule(self,headers,manage,now_time,parking_page_data):
                 for i in range(1,random.choice(range(3,6))):
@@ -405,21 +408,21 @@ class Test_parking():
                                 data['CpnID'] = manage['CpnID']
                                 data['SubID'] = manage['SubID']
                                 data['ID'] = parking_page_data['id']
-                                data['ParkID'] = parking_page_data['parkID']
-                                data['VipTpID'] = '0%s'% i
-                                data['IsEv'] = "0"
-                                data['CalculaTyp'] = "0"
-                                data['FreeMinute'] = "0"
-                                data['StartMinute'] = "0"
-                                data['StartMoney'] = "0"
-                                data['StartIntg'] = "0"
-                                data['StartGold'] = "0"
-                                data['IntrvalTime'] = "5"
-                                data['IntrvalMoney'] = "5"
-                                data['IntrvalIntg'] = "5"
-                                data['IntrvalGold'] = "5"
-                                data['ConsumMoney'] = "0"
-                                data['ConsFreeMinute'] = "0"
+                                data['ParkID'] = parking_page_data['parkID']    #停车场编号
+                                data['VipTpID'] = '0%s'% i                      #会员类型ID
+                                data['IsEv'] = "0"                              #是否是新能源车牌(0-所有车型，1-新能源车票)
+                                data['CalculaTyp'] = "0"                        #计算类型(0-按次数计算，1-按时长计算)
+                                data['FreeMinute'] = "0"                        #免费时长(多少分钟内免费)
+                                data['StartMinute'] = "0"                       #起步时长
+                                data['StartMoney'] = "0"                        #起步金额
+                                data['StartIntg'] = "0"                         #起步积分
+                                data['StartGold'] = "0"                         #起步金币
+                                data['IntrvalTime'] = "5"                       #单价时间
+                                data['IntrvalMoney'] = "5"                      #单价金额
+                                data['IntrvalIntg'] = "5"                       #单价积分
+                                data['IntrvalGold'] = "5"                       #单价金币
+                                data['ConsumMoney'] = "0"                       #消费金额线
+                                data['ConsFreeMinute'] = "0"                    #优惠时长
                                 data['IntgSupportHour'] = "0"
                                 data['Uptr'] = manage['username']
                                 data['UptDtt'] = now_time['ymd_hms']
@@ -445,9 +448,9 @@ class Test_parking():
                         assert response.status_code == 200
                         assert response_json['Success'] == True                       
                         if response_json['Data']['PageDataList']:
+                                # mysql insert response data
+                                comm_way.sql_insert('parking_rule_response',response_json['Data']['PageDataList'][0])
                                 for i in response_json['Data']['PageDataList']:
-                                        # mysql insert response data
-                                        comm_way.sql_insert('parking_rule_response',response_json['Data']['PageDataList'][0])
                                         print(i)
                         else:
                                 print('没有停车场缴费规则')
@@ -498,6 +501,40 @@ class Test_parking():
                         print(response_json['Message'])
                         assert response.status_code == 200
                         assert response_json['Success'] == True                     
+                except:
+                        raise
+
+        # 新增停车订单
+        def test_park_order_form(self,headers,manage,car_data_response_data,now_time):
+                data={}
+                try:    
+                        data['CpnID'] = manage['CpnID']
+                        data['SubID'] = manage['SubID']
+                        data['JoinDt'] = now_time['ymd_hms']            #入场时间
+                        data['ParkDt'] = 0                              #停车时长
+                        data['LeaveDt'] = '2020-07-21 18:09:27'         #离场时间
+                        data['PayTyp'] = 0                              #支付方式(1-微信支付，1-积分支付，)
+                        data['PayMoney'] = 0                            #支付金额(PayTyp=0有效)
+                        data['PayIntg'] = 0                             #支付积分(PayTyp=1有效)
+                        data['PayGold'] = 0                             #支付金币(PayTyp=2有效)
+                        data['GstID'] = car_data_response_data['gstID']
+                        data['CarNum'] = car_data_response_data['carID']#车牌号
+                        data['BllNo'] = '234242'                        #订单号
+                        data['Stt'] = 0                                 #状体(0-录入，50-成功)
+                        data['Deleted'] = ''
+                        data['Uptr'] = ''
+                        data['UptDtt'] = ''
+                        data['PgIndex'] = 0
+                        data['PgSize'] = 0
+                        data['MemberTypID'] = '01'
+                        print(data)
+                        response=requests.post(url=manage['url'] % '/Park/AddParkOrder',data=data,headers=headers)
+                        response_json = comm_way.response_dispose(response.json())
+                        print(response_json)
+                        print(response_json['Message'])
+                        assert response.status_code == 200
+                        assert response_json['Success'] == True                       
+                     
                 except:
                         raise
 
@@ -896,7 +933,7 @@ class Test_ticket_type():
                         data['TStt'] = ticket_type_response_data['tStt']
                         data['UseSDy'] = ticket_type_response_data['useSDy']
                         data['UseADy'] = ticket_type_response_data['useADy']
-                        data['Brf'] = 'update aiptest'
+                        data['Brf'] = 'update aa aiptest'
                         data['Stt'] = ticket_type_response_data['stt']
                         data['UptDtt'] = now_time['ymd_hms']
                         data['UpdateProName'] = 'Brf,UptDtt'
