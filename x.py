@@ -1,13 +1,21 @@
-import pandas
-import numpy
+import json
 
 
-arr2={'a':[1,2,3,4],'b':[5,6,7,8],
+data_sublist={}
 
-'c':[9,10,11,12],'d':[13,14,15,16]}
 
-print(arr2)
 
-x=pandas.DataFrame(arr2)
+data_sublist['MaxTotal'] = '0'                  #限制数量
+data_sublist['Amt'] = '0'                       #计划数量
+data_sublist['ImgUrls'] = ''
+data_sublist['Intro'] = ''
+data_sublist['Brf'] = 'apitest'
 
+
+x=json.dumps(data_sublist)
+print(data_sublist)
+print(type(data_sublist))
 print(x)
+print(type(x))
+
+

@@ -105,15 +105,17 @@ def test_menber_register(headers,menber,menber_data_random,organization_response
                 data['Prvc'] = ''
                 data['City'] = ''
                 data['Addr'] = ''
-                data['UnionID'] = ''
+                data['UnionID'] = menber_data_random['UnionID']
                 data['JsCode'] = ''
                 data['EmployeeNumber'] = ''
                 data['AppID'] = ''
                 data['AppSecret'] = ''
+                print(data)
                 # mysql insert request data
                 comm_way.sql_insert('register_request',data)
                 response=requests.post(url=menber['url'] % '/Guest/Register',data=data,headers=headers)
                 response_json = comm_way.response_dispose(response.json())
+                print(response_json)
                 print(response_json['Message'])
                 assert response.status_code == 200
                 assert response_json['Success'] == True
@@ -166,11 +168,15 @@ class Test_sign_in():
                 try:
                         data['CpnID'] = menber['CpnID']
                         data['SubID'] = menber['SubID']
+                        data['OrgID'] = menber_register_response_data['orgID']
                         data['GstID'] = menber_register_response_data['gstID']
                         data['VipID'] = menber_register_response_data['crdFaceID']
+                        data['CrdID'] = menber_register_response_data['crdID']
                         data['Brf'] = "apitest"
+                        print(data)
                         response=requests.post(url=menber['url'] % '/SignIn/SignIn',data=data,headers=headers)
                         response_json = comm_way.response_dispose(response.json())
+                        print(response_json)
                         assert response.status_code == 200
                         assert response_json['Success'] == True
                         print(response_json['Message'])
@@ -208,7 +214,7 @@ class Test_index_menber_data():
                         print(response_json['Message'])
                         assert response.status_code == 200
                         assert response_json['Success'] == True
-                        print(response_json['Data']['Data'])
+                        print(response_json)
                 except:
                         raise
 
@@ -243,7 +249,7 @@ class Test_index_menber_data():
                         print(response_json['Message'])
                         assert response.status_code == 200
                         assert response_json['Success'] == True
-                        print(response_json['Data']['Data'])
+                        print(response_json)
                 except:
                         raise
         # 获取会员积分统计
@@ -259,11 +265,10 @@ class Test_index_menber_data():
                         data['Sort'] = ''
                         response=requests.post(url=manage['url'] % '/Intg/GetIntgPage',data=data,headers=headers)
                         response_json = comm_way.response_dispose(response.json())
-                        print(response_json)
                         print(response_json['Message'])
                         assert response.status_code == 200
                         assert response_json['Success'] == True
-                        print(response_json['Data']['Data'])
+                        print(response_json)
                 except:
                         raise
         # 获取某个会员积分明细
@@ -295,9 +300,10 @@ class Test_index_menber_data():
                         data['vipID'] =menber_register_response_data['crdFaceID']
                         response=requests.post(url=menber['url'] % '/Intg/GetIntgSum',data=data,headers=headers)
                         response_json = comm_way.response_dispose(response.json())
+                        print(response_json['Message'])
                         assert response.status_code == 200
                         assert response_json['Success'] == True
-                        print('SumIntg:%s；'% response_json['Data']['SumIntg'])
+                        print(response_json)
                 except :
                         raise
 
@@ -423,6 +429,7 @@ class Test_car():
                 data={}
                 try:
                         data['CpnID'] = menber['CpnID']
+                        data['SubID'] = menber['SubID']
                         data['ID'] = car_data_response_data['id']
                         data['GstID'] = car_data_response_data['gstID']
                         data['CarID'] = car_data_random['CarID']  
@@ -433,15 +440,18 @@ class Test_car():
                         data['Brf'] = 'update test'
                         data['UptDtt'] = now_time['ymd_hms']
                         data['Parm'] = 'CarID,CarTp,Brf'         #修改字段
+                        print(data)
                         response=requests.post(url=menber['url'] % '/GstCar/UpGstCar',data=data,headers=headers)
                         response_json = comm_way.response_dispose(response.json())
-                        print(response_json['Message'])
+                        print(response_json)
+                        # print(response_json['Message'])
                         assert response.status_code == 200
                         assert response_json['Success'] == True
                         # mysql insert response data
                         comm_way.sql_insert('car_data_response',response_json['Data']['Data'][0])  
                 except:
                         raise
+
 
         #获取当前用户车牌号
         def test_get_user_car_data(self,headers,menber,menber_register_response_data):
@@ -451,7 +461,7 @@ class Test_car():
                         data['GstID'] = menber_register_response_data['gstID']
                         response=requests.post(url=menber['url'] % '/GstCar/GetGstCar',data=data,headers=headers)
                         response_json = comm_way.response_dispose(response.json())
-                        print(response_json)
+                        print(response_json['Message'])
                         assert response.status_code == 200
                         assert response_json['Success'] == True
                         if response_json['Data']:

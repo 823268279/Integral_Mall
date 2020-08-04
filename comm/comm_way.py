@@ -181,5 +181,5 @@ class Smtp():
         server.quit()
 
 
-comm_way=Way().sql_select_commodity_data('commodity_data')
-print(comm_way)
+# comm_way=Way().sql_select_commodity_data('commodity_data')
+# print(comm_way)

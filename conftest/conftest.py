@@ -44,6 +44,7 @@ def headers():
         assert response_json['Success'] == True
         headers={}
         headers['Authorization']=response_json['Data']['Data']['token']
+        # headers['Content-Type']='text/json;charset=utf-8'
         return headers
     except:
         raise
@@ -90,6 +91,7 @@ def now_time():
     data['ymd_hms']=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     data['StDt']=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     data['EdDt']=(datetime.datetime.now()+datetime.timedelta(days=3)).strftime('%Y-%m-%d %H:%M:%S')
+    data['later']=(datetime.datetime.now()-datetime.timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S')
     return data
 
 
@@ -107,6 +109,7 @@ def menber_data_random():
     y = '%s%s%s-%s%s%s%s'%(random.choice(c),random.choice(c),random.choice(c),random.choice(c),random.choice(c),random.choice(c),random.choice(c))
     z = '%s%s%s%s%s-%s%s'%(random.choice(b),random.choice(b),random.choice(b),random.choice(b),random.choice(b),random.choice(b),random.choice(b))
     data['OpnID']='%s%s%s'%(x,y,z)
+    data['UnionID']='%s%s%s'%(x,y,z)
     #卡类型
     data['VipTpID']=random.choice(a)  
     #姓名
@@ -181,7 +184,7 @@ def car_data_random():
     b = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
     data={}
     #车辆编号
-    data['CarID'] = '川Y.%s%s%s'% (random.choice(b),random.choice(b),sum(random.sample(range(300),3)))
+    data['CarID'] = '川Y%s%s%s'% (random.choice(b),random.choice(b),sum(random.sample(range(300),3)))
     data['carTp'] = random.choice(a)
     return data
 
@@ -191,9 +194,26 @@ def commodity_data_random():
     return comm_way.sql_select_commodity_data('commodity_data')
 
 
+# random park order data
+@pytest.fixture(scope='function') 
+def park_order_data_random():
+    data={}
+    # 停车订单号
+    data['BllNo']=sum(random.sample(range(10000000,999999999),4))
+    data['JoinDt']=(datetime.datetime.now()-datetime.timedelta(hours=random.choice(range(1,24)))).strftime('%Y-%m-%d %H:%M:%S')
+    return data
 
-
-
+# random putaway activity data
+@pytest.fixture(scope='function') 
+def putaway_activity_data_random():
+    data={}
+    # bllno_number
+    data['BllNo']=sum(random.sample(range(10000000,999999999),4))
+    # activity name
+    data['Name']='上架活动%s'% sum(random.sample(range(100,700),2))
+    # exchange integral
+    data['FcttsIntg']=sum(random.sample(range(50,200),2))
+    return data
 
 
 
@@ -225,7 +245,7 @@ def menber_register_response_data():
 
 # mysql select table： menber_data_response
 @pytest.fixture(scope='session')
-def menber_data():
+def menber_select_response_data():
     return comm_way.sql_select('menber_data_response')
 
     
@@ -279,3 +299,33 @@ def ticket_seed_response_data():
 @pytest.fixture(scope='session')    
 def commodity_response_data():
     return comm_way.sql_select('commodity_data_response')
+
+
+# mysql select table:shop_commodity_list_response
+@pytest.fixture(scope='session')    
+def shop_commodity_list_response_data():
+    return comm_way.sql_select('shop_commodity_list_response')
+
+
+# mysql select table:shop_commodity_putaway_response
+@pytest.fixture(scope='session')    
+def shop_commodity_putaway_response_data():
+    return comm_way.sql_select('shop_commodity_putaway_response')
+
+
+# mysql select table:shop_order_list_response
+@pytest.fixture(scope='session')    
+def shop_order_list_response_data():
+    return comm_way.sql_select('shop_order_list_response')
+
+
+# mysql select table:commodity_putaway_list_response
+@pytest.fixture(scope='session')    
+def commodity_putaway_list_response_data():
+    return comm_way.sql_select('commodity_putaway_list_response')
+
+
+# mysql select table:check_system_staff_list
+@pytest.fixture(scope='session')    
+def check_system_staff_list_response_data():
+    return comm_way.sql_select('check_system_staff_list_response')
