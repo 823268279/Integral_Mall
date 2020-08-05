@@ -137,6 +137,7 @@ class Test_staff_register_login():
                         data['PgIndex'] = '1'
                         data['PgSize'] = '10'
 
+
                         print(data)
                         response=requests.post(url=manage['url'] % '/StoreStff/GetWriteOffPg',data=data,headers=headers)
                         response_json = comm_way.response_dispose(response.json())

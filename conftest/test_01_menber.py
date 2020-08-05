@@ -23,23 +23,24 @@ comm_way=Way()
 
 
 class Test_company_organization():
-        # #新增企业机构
+        #新增门店
         # def test_add_company_organization(self,headers,manage,now_time):
         #         data={}
         #         try:
         #                 data['CpnID'] = manage['CpnID']
-        #                 data['OrgID'] = '1002'
-        #                 data['Name'] = '大卖场二'
+        #                 data['SubID'] = manage['SubID']
+        #                 data['OrgID'] = '1003'
+        #                 data['Name'] = '大卖场三'
         #                 data['HlpCd'] = ''
         #                 data['PrtID'] = ''
         #                 data['Type'] = '004'
         #                 data['SubType'] = '1'
         #                 data['BrchID'] = ''
-        #                 data['City'] = '绵阳'
+        #                 data['City'] = '重庆'
         #                 data['Lnkr'] =''
-        #                 data['Adr'] = '绵阳大道180号'
+        #                 data['Adr'] = '解放碑'
         #                 data['Tel'] = ''
-        #                 data['Phone'] = '18132253341'
+        #                 data['Phone'] = '18132255675'
         #                 data['Fax'] = ''
         #                 data['Lvl'] = '1'
         #                 data['Stt'] = '0'
@@ -49,7 +50,7 @@ class Test_company_organization():
         #                 data['IsSendCrd'] = '1'
         #                 data['Brf'] = 'apitest'
         #                 data['UptDtt'] = now_time['ymd_hms']
-        #                 response=requests.post(url=manage['url'] % '/CpnOrg/AddParkOrder',data=data,headers=headers)
+        #                 response=requests.post(url=manage['url'] % '/CpnOrg/AddCpnOrg',data=data,headers=headers)
         #                 response_json = comm_way.response_dispose(response.json())
         #                 print(response_json['Message'])
         #                 assert response.status_code == 200
@@ -57,15 +58,37 @@ class Test_company_organization():
         #         except:
         #                 raise
 
+        # 分页获取门店
+        def test_get_company_organization_page(self,headers,manage):
+                data={}
+                try:
+                        data['CpnID'] = manage['CpnID']
+                        data['SubID'] = manage['SubID']
+                        data['PgIndex'] = '1'
+                        data['PgSize'] = '10'
+                        data['Stt'] = '-99'
+                        print(data)
+                        response=requests.post(url=manage['url'] % '/CpnOrg/GetCpnOrgPG',data=data,headers=headers)
+                        response_json = comm_way.response_dispose(response.json())
+                        print(response_json)
+                        print(response_json['Message'])
+                        assert response.status_code == 200
+                        assert response_json['Success'] == True
+                        if response_json['Data']['Data']:
+                                for i in response_json['Data']['Data']:
+                                        print(i)
+                        else:
+                                print('没有门店')
+                except:
+                        raise
 
-
-        #获取企业机构
-        def test_get_company_organization_page(self,headers,menber):
+        # 获取状态正常的所有门店
+        def test_get_company_organization_all(self,headers,menber):
                 data={}
                 try:
                         data['CpnID'] = menber['CpnID']
                         data['SubID'] = menber['SubID']
-                        response=requests.post(url=menber['url'] % '/Guest/GetCpnOrg',data=data,headers=headers)
+                        response=requests.post(url=menber['url'] % '/Guest/GetNormalCpnOrg',data=data,headers=headers)
                         response_json = comm_way.response_dispose(response.json())
                         print(response_json['Message'])
                         assert response.status_code == 200

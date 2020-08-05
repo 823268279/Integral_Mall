@@ -203,6 +203,16 @@ def park_order_data_random():
     data['JoinDt']=(datetime.datetime.now()-datetime.timedelta(hours=random.choice(range(1,24)))).strftime('%Y-%m-%d %H:%M:%S')
     return data
 
+# random store data
+@pytest.fixture(scope='function') 
+def store_data_random():
+    data={}
+    # store code
+    data['StoreID']=sum(random.sample(range(10000000,999999999),4))
+    # telephone number
+    data['Tel']='13%s%s' % (sum(random.sample(range(10000,100000),1)),sum(random.sample(range(1000,10000),1)))
+    return data
+
 # random putaway activity data
 @pytest.fixture(scope='function') 
 def putaway_activity_data_random():
@@ -214,6 +224,7 @@ def putaway_activity_data_random():
     # exchange integral
     data['FcttsIntg']=sum(random.sample(range(50,200),2))
     return data
+
 
 
 
@@ -329,3 +340,8 @@ def commodity_putaway_list_response_data():
 @pytest.fixture(scope='session')    
 def check_system_staff_list_response_data():
     return comm_way.sql_select('check_system_staff_list_response')
+
+# mysql select table:park_order_page_response
+@pytest.fixture(scope='session')    
+def park_order_page_response_data():
+    return comm_way.sql_select('park_order_page_response')

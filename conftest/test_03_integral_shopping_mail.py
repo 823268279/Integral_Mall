@@ -4,8 +4,82 @@ import requests
 from comm.comm_way import Way#公共方法
 comm_way=Way()
 
-
-
+# 店铺管理
+class Test_store_data_manage():
+        # 添加店铺
+        def test_add_store(self,headers,manage,now_time,store_data_random,commodity_data_random):
+                data={}
+                try:
+                        data['CpnID'] = manage['CpnID']
+                        data['SubID'] = manage['SubID']  
+                        data['OrgID'] = '0000'
+                        data['StoreID'] = store_data_random['StoreID']    #店铺编码
+                        data['Name'] = commodity_data_random['commodity_brand']         #店铺名称
+                        data['Logo'] = ''         #店铺logo
+                        data['Tel'] = store_data_random['Tel']          #店铺电话
+                        data['Cls'] = ''          #业种
+                        data['Flr'] = ''         #楼层
+                        data['FlrNo'] = ''        #门牌号
+                        data['Intro'] = '店铺'        #图文描述
+                        data['Stt'] = '0'          #状态[0_正常，-1_禁用]
+                        data['Deleted'] = 'N'      #删除状态[N_正常，Y_删除]
+                        data['RealImg'] = ''      #店铺照片
+                        data['Uptr'] = manage['username']
+                        data['UptDtt'] = now_time['ymd_hms']
+                        print(data)
+                        response=requests.post(url=manage['url'] % '/Store/AddCpnOrg',data=data,headers=headers)
+                        response_json = comm_way.response_dispose(response.json())
+                        print(response_json['Message'])
+                        assert response.status_code == 200
+                        assert response_json['Success'] == True
+                except:
+                        raise
+        # 获取店铺分页
+        def test_get_store_page(self,headers,manage):
+                data={}
+                try:
+                        data['CpnID'] = manage['CpnID']
+                        data['SubID'] = manage['SubID']  
+                        data['OrgID'] = ''
+                        data['StoreID'] = ''
+                        data['Name'] = ''
+                        data['Logo'] = ''
+                        data['Tel'] =  ''
+                        data['Cls'] = ''
+                        data['Flr'] = ''
+                        data['FlrNo'] = ''
+                        data['Intro'] = ''
+                        data['Stt'] = ''
+                        data['Deleted'] = ''
+                        data['RealImg'] = ''
+                        data['Uptr'] = manage['username']
+                        data['PgIndex'] = '1'
+                        data['PgSize'] = '10'
+                        print(data)
+                        response=requests.post(url=manage['url'] % '/Store/GetCpnOrg',data=data,headers=headers)
+                        response_json = comm_way.response_dispose(response.json())
+                        print(response_json['Message'])
+                        assert response.status_code == 200
+                        assert response_json['Success'] == True
+                except:
+                        raise
+        # 获取所有可用店铺
+        def test_get_store_all_usable(self,headers,manage):
+                data={}
+                try:
+                        data['CpnID'] = manage['CpnID']
+                        data['SubID'] = manage['SubID']  
+                        data['Del'] = 'N'       # 删除状态[N_正常，Y_删除]
+                        data['Stt'] = '0'       # 启动状态[0_正常，1_禁用]
+                        print(data)
+                        response=requests.post(url=manage['url'] % '/Store/GetAvailableStore',data=data,headers=headers)
+                        response_json = comm_way.response_dispose(response.json())
+                        print(response_json['Message'])
+                        assert response.status_code == 200
+                        assert response_json['Success'] == True
+                except:
+                        raise
+# 商品管理
 class Test_commodity_data_manage():
         # 新增商品基础资料
         def test_add_commodity_data(self,headers,manage,now_time,commodity_data_random):
@@ -72,7 +146,7 @@ class Test_commodity_data_manage():
                                 for i in response_json['Data']['GdsList']:
                                         print(i)
                         else:
-                                print('没有商品资料')
+                                print('没有商品')
                         
                 except:
                         raise
@@ -88,7 +162,7 @@ class Test_commodity_data_manage():
                         response_json = comm_way.response_dispose(response.json())
                         print(response_json)
                         assert response.status_code == 200
-                        #     assert response_json['Success'] == True
+                        assert response_json['Success'] == True
                 except:
                         raise
 class Test_commodity_putaway():
