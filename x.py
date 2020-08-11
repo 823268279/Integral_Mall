@@ -1,21 +1,7 @@
-import json
+import requests
+import chardet
 
+x=requests.get(url='https://weibo.com/u/7430024741?from=myfollow_all&is_all=1',verify=True)
+y=x.text
 
-data_sublist={}
-
-
-
-data_sublist['MaxTotal'] = '0'                  #限制数量
-data_sublist['Amt'] = '0'                       #计划数量
-data_sublist['ImgUrls'] = ''
-data_sublist['Intro'] = ''
-data_sublist['Brf'] = 'apitest'
-
-
-x=json.dumps(data_sublist)
-print(data_sublist)
-print(type(data_sublist))
-print(x)
-print(type(x))
-
-
+print(y)
