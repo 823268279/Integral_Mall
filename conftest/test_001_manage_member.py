@@ -11,21 +11,21 @@ comm_way=Way()
 
 
 
-#短信验证码
-# def test_smscode(menber):
-#         data={
-#                 "cpnID":"",
-#                 "SubID":"",
-#                 "tel":"13183807891",
-#                 }
-#         try:
-#                 data['CpnID'] = menber['CpnID']
-#                 data['SubID'] = menber['SubID']
-#                 response=requests.post(url=menber['url'] % '/SMS/SendSMSCode',data=data)
-#                 print(response.status_code)
-#                 print(response.json())
-#         except:
-#                 raise
+# 短信验证码
+def test_smscode(member):
+        data={
+                "cpnID":"",
+                "SubID":"",
+                "tel":"13183807891",
+                }
+        try:
+                data['CpnID'] = member['CpnID']
+                data['SubID'] = member['SubID']
+                response=requests.post(url=member['url'] % '/User/GetCode',data=data)
+                print(response.status_code)
+                print(response.json())
+        except:
+                raise
 
 
 
@@ -71,18 +71,21 @@ class Test_company_organization():
                 try:
                         data['CpnID'] = manage['CpnID']
                         data['SubID'] = manage['SubID']
-                        data['PgIndex'] = '1'
-                        data['PgSize'] = '10'
+                        data['OrgID'] = ''
+                        data['Name'] = ''
                         data['Stt'] = '-99'
+                        data['PageIndex'] = '1'
+                        data['PageSize'] = '10'
+                        data['Sort'] = ''
                         print(data)
-                        response=requests.post(url=manage['url'] % '/CpnOrg/GetCpnOrgPG',data=data,headers=headers)
+                        response=requests.post(url=manage['url'] % '/CpnOrg/GetTknPage',data=data,headers=headers)
                         response_json = comm_way.response_dispose(response.json())
                         print(response_json)
                         print(response_json['Message'])
                         assert response.status_code == 200
                         assert response_json['Success'] == True
-                        if response_json['Data']['Data']:
-                                for i in response_json['Data']['Data']:
+                        if response_json['Data']['PageDataList']:
+                                for i in response_json['Data']['PageDataList']:
                                         print(i)
                         else:
                                 print('没有门店')
@@ -90,12 +93,12 @@ class Test_company_organization():
                         raise
 
         # 获取状态正常的所有门店
-        def test_get_company_organization_all(self,headers,menber):
+        def test_get_company_organization_all(self,headers,member):
                 data={}
                 try:
-                        data['CpnID'] = menber['CpnID']
-                        data['SubID'] = menber['SubID']
-                        response=requests.post(url=menber['url'] % '/Guest/GetNormalCpnOrg',data=data,headers=headers)
+                        data['CpnID'] = member['CpnID']
+                        data['SubID'] = member['SubID']
+                        response=requests.post(url=member['url'] % '/Guest/GetNormalCpnOrg',data=data,headers=headers)
                         response_json = comm_way.response_dispose(response.json())
                         print(response_json['Message'])
                         assert response.status_code == 200
@@ -103,7 +106,7 @@ class Test_company_organization():
                         if response_json['Data']['Data']:
                                 for i in response_json['Data']['Data']:
                                         # mysql insert organization_response
-                                        comm_way.sql_insert('organization_response',response_json['Data']['Data'][-1])
+                                        comm_way.sql_insert('organization_response_data',response_json['Data']['Data'][-1])
                                         print(i)
                         else:
                                 print('没有机构')
@@ -114,15 +117,15 @@ class Test_company_organization():
 
 
 #会员注册   
-def test_member_register(headers,menber,menber_data_random,organization_response_data):
+def test_member_register(headers,member,member_data_random,organization_response_data):
         data={}
         try:
-                data['CpnID'] = menber['CpnID']
-                data['SubID'] = menber['SubID']
-                data['OpnID'] = menber_data_random['OpnID']
-                data['Name'] = menber_data_random['Name']
-                data['Tel'] = menber_data_random['Tel']
-                data['Brth'] = menber_data_random['Brth']
+                data['CpnID'] = member['CpnID']
+                data['SubID'] = member['SubID']
+                data['OpnID'] = member_data_random['OpnID']
+                data['Name'] = member_data_random['Name']
+                data['Tel'] = member_data_random['Tel']
+                data['Brth'] = member_data_random['Brth']
                 data['SMSCode'] = '0000'        #短信验证码
                 data['OrgID'] = '0000'
                 data['UseOrgID']= organization_response_data['orgID']
@@ -135,15 +138,12 @@ def test_member_register(headers,menber,menber_data_random,organization_response
                 data['Prvc'] = ''
                 data['City'] = ''
                 data['Addr'] = ''
-                data['UnionID'] = menber_data_random['UnionID']
+                data['UnionID'] = member_data_random['UnionID']
                 data['JsCode'] = ''
                 data['EmployeeNumber'] = ''
                 data['AppID'] = ''
                 data['AppSecret'] = ''
-                print(data)
-                # mysql insert request data
-                comm_way.sql_insert('register_request',data)
-                response=requests.post(url=menber['url'] % '/Guest/Register',data=data,headers=headers)
+                response=requests.post(url=member['url'] % '/Guest/Register',data=data,headers=headers)
                 response_json = comm_way.response_dispose(response.json())
                 print(response_json['Message'])
                 assert response.status_code == 200
@@ -151,12 +151,14 @@ def test_member_register(headers,menber,menber_data_random,organization_response
                 if response_json['Data']['Data']:
                         for i in response_json['Data']['Data']:
                                 # mysql insert response data
-                                comm_way.sql_insert('register_response',response_json['Data']['Data'][0])
+                                comm_way.sql_insert('register_response_data',response_json['Data']['Data'][0])
                                 print(i)
                 else:
                         print('没有会员')
         except:
                 raise
+
+
 
 
 
@@ -254,73 +256,121 @@ class Test_login():
                         raise
 
 
-
-class Test_member_select():
-        #查询会员单个资料
-        def test_get_member_data(self,headers,manage,menber_register_response_data):
+# 管理系统首页
+class Test_manage_index():
+        # 会员统计
+        def test_get_member_sum(self,headers,manage):
                 data={}
                 try:
                         data['CpnID'] = manage['CpnID']
-                        data["gstID"] = menber_register_response_data['gstID']
+                        data['SubID'] = manage['SubID'] # 公众号[传值则只查询当前来源，不传查询所有来源]
+                        data['StaTime'] = ''    # 开始时间
+                        data['EndTime'] = ''    # 结束时间
+                        data['IdSuo'] = ''      # 注册来源[传值则只查询当前来源，不传查询所有来源]
+                        data['SqType'] = '1'    # 0_根据时间查询，1_根据公众号查询
+                        response=requests.post(url=manage['url'] % '/Gst/StatisticsGst',data=data,headers=headers)
+                        response_json = comm_way.response_dispose(response.json())
+                        print(response_json)
+                        assert response.status_code == 200
+                        assert response_json['Success'] == True
+                except:
+                        raise
+        # 获取会员每日注册数量
+        def test_get_member_register_num(self,headers,manage):
+                data={}
+                try:
+                        data['CpnID'] = manage['CpnID']
+                        data['StartDate'] ='2020-08-25 01:46:42'
+                        data['EndDate'] = '2020-08-25 19:46:42'
+                        response=requests.post(url=manage['url'] % '/Gst/MemberDayRegInfos',data=data,headers=headers)
+                        response_json = comm_way.response_dispose(response.json())
+                        print(response_json)
+                        print(response_json['Message'])
+                        assert response.status_code == 200
+                        assert response_json['Success'] == True
+                        global verification_code
+                        verification_code = response_json['Data']['Data']
+                except:
+                        raise
+
+
+# 获取会员类型
+class member_type():
+        def get_member_type(self,headers,manage):
+                data={}
+class Test_member_select():
+        #查询会员单个资料
+        def test_get_member_data(self,headers,manage,register_response_data):
+                data={}
+                try:
+                        data['CpnID'] = manage['CpnID']
+                        data["Name"] = ''
+                        data["VipID"] = ''
+                        data["CrdNo"] = ''
+                        data["Tel"] = register_response_data['tel']
+                        data["CarID"] = ''
+                        data["RgStartTime"] = ''
+                        data["RgEndTime"] = ''
+                        data["Stt"] = ''
                         print(data)
                         response=requests.post(url=manage['url'] % '/Gst/GetSingerData',data=data,headers=headers)
                         response_json = comm_way.response_dispose(response.json())
                         print(response_json['Message'])  
                         assert response.status_code == 200
                         assert response_json['Success'] == True    
-                        global member_response_data
-                        member_response_data=response_json['Data']['Data']
+                        global member_data
+                        member_data=response_json['Data']['Data']
                         print(response_json['Data']['Data'])
                 except:
                         raise
 
         #修改会员信息
-        def test_update_member_data(self,headers,manage,menber_data_random):
+        def test_update_member_data(self,headers,manage,member_data_random):
                 data={}
                 try:
-                        data['ID'] = member_response_data['id']
-                        data['CpnID'] = member_response_data['cpnID']
-                        data['UsrFlg'] = member_response_data['usrFlg']
-                        data['NickName'] = member_response_data['nickName']
-                        data['Pwd'] = member_response_data['pwd']
-                        data['PwdDt'] = member_response_data['pwdDt']
-                        data['Tel'] = menber_data_random['Tel']
-                        data['Eml'] = member_response_data['eml']
-                        data['Name'] = menber_data_random['Name']
+                        data['ID'] = member_data['id']
+                        data['CpnID'] = member_data['cpnID']
+                        data['UsrFlg'] = member_data['usrFlg']
+                        data['NickName'] = member_data['nickName']
+                        data['Pwd'] = member_data['pwd']
+                        data['PwdDt'] = member_data['pwdDt']
+                        data['Tel'] = member_data_random['Tel']
+                        data['Eml'] = member_data['eml']
+                        data['Name'] = member_data_random['Name']
                         data['IDntTp'] = '001'
-                        data['IDntNmb'] = menber_data_random['IDntNmb']
-                        data['VipID'] = member_response_data['vipID']
-                        data['OrgID'] = member_response_data['orgID']
-                        # data['VipTpID'] = menber_data_random['VipTpID']
-                        data['VipTpID'] = member_response_data['vipTpID']
-                        data['Strvlstt'] = member_response_data['strvlstt']
-                        data['LastDate'] = member_response_data['lastDate']
-                        data['RgstApp'] = member_response_data['rgstApp']
-                        data['Lne'] = member_response_data['lne']
-                        data['RegstMonth'] = member_response_data['regstMonth']
-                        data['RgWxMonth'] = member_response_data['rgWxMonth']
-                        data['Rcmd'] = member_response_data['rcmd']
-                        data['EcrpBase'] = member_response_data['ecrpBase']
-                        data['Ecrp1'] = member_response_data['ecrp1']
-                        data['Ecrp2'] = member_response_data['ecrp2']
-                        data['IsUpToERP'] = member_response_data['isUpToERP']
-                        data['Brth'] = menber_data_random['Brth']
-                        data['Sex'] = member_response_data['sex']
-                        data['Mrry'] = member_response_data['mrry']
-                        data['BabyStt'] = member_response_data['babyStt']
-                        data['Babydt'] = member_response_data['babydt']
-                        data['Edu'] = member_response_data['edu']
-                        data['Ntn'] = member_response_data['ntn']
-                        data['Prvc'] = member_response_data['prvc']
-                        data['City'] = member_response_data['city']
-                        data['Addr'] = member_response_data['addr']
-                        data['Avt'] = member_response_data['avt']
-                        data['EmployeeNumber'] = member_response_data['employeeNumber']
-                        data['RegDt'] = member_response_data['regDt']
-                        data['Stt'] = member_response_data['stt']
-                        data['Brf'] = member_response_data['brf']
-                        data['Uptr'] = member_response_data['uptr']
-                        data['UptDtt'] = member_response_data['uptDtt']
+                        data['IDntNmb'] = member_data_random['IDntNmb']
+                        data['VipID'] = member_data['vipID']
+                        data['OrgID'] = member_data['orgID']
+                        # data['VipTpID'] = member_data_random['VipTpID']
+                        data['VipTpID'] = member_data['vipTpID']
+                        data['Strvlstt'] = member_data['strvlstt']
+                        data['LastDate'] = member_data['lastDate']
+                        data['RgstApp'] = member_data['rgstApp']
+                        data['Lne'] = member_data['lne']
+                        data['RegstMonth'] = member_data['regstMonth']
+                        data['RgWxMonth'] = member_data['rgWxMonth']
+                        data['Rcmd'] = member_data['rcmd']
+                        data['EcrpBase'] = member_data['ecrpBase']
+                        data['Ecrp1'] = member_data['ecrp1']
+                        data['Ecrp2'] = member_data['ecrp2']
+                        data['IsUpToERP'] = member_data['isUpToERP']
+                        data['Brth'] = member_data_random['Brth']
+                        data['Sex'] = member_data['sex']
+                        data['Mrry'] = member_data['mrry']
+                        data['BabyStt'] = member_data['babyStt']
+                        data['Babydt'] = member_data['babydt']
+                        data['Edu'] = member_data['edu']
+                        data['Ntn'] = member_data['ntn']
+                        data['Prvc'] = member_data['prvc']
+                        data['City'] = member_data['city']
+                        data['Addr'] = member_data['addr']
+                        data['Avt'] = member_data['avt']
+                        data['EmployeeNumber'] = member_data['employeeNumber']
+                        data['RegDt'] = member_data['regDt']
+                        data['Stt'] = member_data['stt']
+                        data['Brf'] = member_data['brf']
+                        data['Uptr'] = member_data['uptr']
+                        data['UptDtt'] = member_data['uptDtt']
                         data['updateProNames'] = 'Tel,Name,IDntTp,IDntNmb,VipTpID,Brth'        #修改字段
                         print(data)
                         response=requests.post(url=manage['url'] % '/Gst/Update',data=data,headers=headers)
@@ -353,7 +403,7 @@ class Test_select_vipdata():
                         assert response_json['Success'] == True   
                         if response_json['Data']['PageDataList']:
                                 # mysql insert member_data_page response data
-                                comm_way.sql_insert('member_data_page_response',response_json['Data']['PageDataList'][0])
+                                comm_way.sql_insert('member_page_response_data',response_json['Data']['PageDataList'][0])
                                 for i in response_json['Data']['PageDataList']:
                                         print(i)
                         else:
@@ -361,13 +411,13 @@ class Test_select_vipdata():
                 except:
                         raise
         #根据会员姓名查询会员数据
-        def test_get_member_data_page_name(self,headers,manage,member_data_page_response_data):
+        def test_get_member_data_name(self,headers,manage,member_page_response_data):
                 data={}
                 try:
                         data['CpnID'] = manage['CpnID']
                         data['SubID'] = manage['SubID']
-                        data['Name'] = member_data_page_response_data['name']
-                        # data['Name'] = '落落大方'
+                        data['Name'] = member_page_response_data['name']
+                        data['Name'] = 'wowo'
                         data['VipID'] = ""
                         data['pageIndex'] = 1
                         data['pageSize'] = 10
@@ -380,7 +430,7 @@ class Test_select_vipdata():
                         assert response_json['Success'] == True
                         if response_json['Data']['PageDataList']:
                                 # mysql insert member data response data
-                                comm_way.sql_insert('member_data_response',response_json['Data']['PageDataList'][0])
+                                comm_way.sql_insert('member_response_data',response_json['Data']['PageDataList'][0])
                                 for i in response_json['Data']['PageDataList']:
                                         print(i)
                         else:
@@ -388,13 +438,13 @@ class Test_select_vipdata():
                 except:
                         raise
         #根据会员卡面号查询会员数据
-        def test_get_member_data_page_vipid(self,headers,manage,member_data_page_response_data):
+        def test_get_member_data_vipid(self,headers,manage,member_page_response_data):
                 data={}
                 try:
                         data['CpnID'] = manage['CpnID']
                         data['SubID'] = manage['SubID']
                         data['Name'] = ""
-                        data['VipID'] = member_data_page_response_data['vipID']
+                        data['VipID'] = member_page_response_data['vipID']
                         data['pageIndex'] = 1
                         data['pageSize'] = 10
                         data['sort'] = "uptDtt desc"
@@ -435,7 +485,7 @@ class Test_get_vipcard():
                         assert response_json['Success'] == True                       
                         if response_json['Data']['PageDataList']:
                                 # mysql insert vipcard page response data
-                                comm_way.sql_insert('vipcard_data_page_response',response_json['Data']['PageDataList'][0])
+                                comm_way.sql_insert('vipcard_page_response_data',response_json['Data']['PageDataList'][0])
                                 for i in response_json['Data']['PageDataList']:
                                         print(i)
                         else:
@@ -448,9 +498,9 @@ class Test_get_vipcard():
                 try:
                         data['CpnID'] = manage['CpnID']
                         data['CrdID'] = vipcard_page_response_data['crdID']
-                        # data['CrdID'] = '188000100000175276'
-                        data['CrdNo'] = ""
-                        data['GstID'] = ""
+                        data['CrdID'] = '9900019000012'
+                        data['CrdNo'] = ''
+                        data['GstID'] = ''
                         data['pageIndex'] = 1
                         data['pageSize'] = 10
                         data['sort'] = "uptDtt desc"
@@ -461,7 +511,7 @@ class Test_get_vipcard():
                         assert response_json['Success'] == True                       
                         if response_json['Data']['PageDataList']:
                                 # mysql insert vipcard response data
-                                comm_way.sql_insert('vipcard_data_response',response_json['Data']['PageDataList'][0])
+                                comm_way.sql_insert('vipcard_response_data',response_json['Data']['PageDataList'][0])
                                 for i in response_json['Data']['PageDataList']:
                                         print(i)
                         else:
@@ -516,35 +566,35 @@ class Test_get_vipcard():
                 except:
                         raise
         
-# 积分调整
-class Test_integral_adjustment():
-        # 添加积分调整单
-        def test_add_integral_adjustment(self,headers,manage,vipcard_response_data,now_time):
-                data={}
-                try:    
-                        data['CpnID'] = manage['CpnID']
-                        data['BllNo'] = '0'      #单据号
-                        data['BizDt'] = now_time['ymd_hms']      #业务日期
-                        data['AccOrgID'] = '0000'   #核算机构
-                        data['OrgID'] = '0000'      #业务机构
-                        data['GstID'] = vipcard_response_data['gstID']      #会员ID
-                        data['VipID'] = vipcard_response_data['vipID']      #会员编码
-                        data['IntgAva'] = '0'    #当前可用积分
-                        data['IntgModi'] = '700'   #积分调整
-                        data['IntgModirs'] = '积分调整单' #调整原因
-                        data['Brf'] = 'apitest'  
-                        data['Stt'] = '0'        #状态[-1:禁用，0:正常，50:通过]
-                        data['FlwStt'] = '0'     #流程状态[-1:作废，0:正常，1:结束]
-                        data['Uptr'] = manage['username']
-                        data['UptDtt'] = now_time['ymd_hms']
-                        response=requests.post(url=manage['url'] % '/IntgCrtn/Add',data=data,headers=headers)
-                        response_json = comm_way.response_dispose(response.json())
-                        print(response_json['Message'])
-                        assert response.status_code == 200
-                        assert response_json['Success'] == True
-                        print(response_json)
-                except:
-                        raise
+# # 积分调整
+# class Test_integral_adjustment():
+#         # 添加积分调整单
+#         def test_add_integral_adjustment(self,headers,manage,vipcard_response_data,now_time):
+#                 data={}
+#                 try:    
+#                         data['CpnID'] = manage['CpnID']
+#                         data['BllNo'] = '0'      #单据号
+#                         data['BizDt'] = now_time['ymd_hms']      #业务日期
+#                         data['AccOrgID'] = '0000'   #核算机构
+#                         data['OrgID'] = '0000'      #业务机构
+#                         data['GstID'] = vipcard_response_data['gstID']      #会员ID
+#                         data['VipID'] = vipcard_response_data['vipID']      #会员编码
+#                         data['IntgAva'] = '0'    #当前可用积分
+#                         data['IntgModi'] = '700'   #积分调整
+#                         data['IntgModirs'] = '积分调整单' #调整原因
+#                         data['Brf'] = 'apitest'  
+#                         data['Stt'] = '0'        #状态[-1:禁用，0:正常，50:通过]
+#                         data['FlwStt'] = '0'     #流程状态[-1:作废，0:正常，1:结束]
+#                         data['Uptr'] = manage['username']
+#                         data['UptDtt'] = now_time['ymd_hms']
+#                         response=requests.post(url=manage['url'] % '/IntgCrtn/Add',data=data,headers=headers)
+#                         response_json = comm_way.response_dispose(response.json())
+#                         print(response_json['Message'])
+#                         assert response.status_code == 200
+#                         assert response_json['Success'] == True
+#                         print(response_json)
+#                 except:
+#                         raise
 
 # 停车场
 class Test_parking():
@@ -596,7 +646,7 @@ class Test_parking():
                         assert response_json['Success'] == True                       
                         if response_json['Data']['PageDataList']:
                                 # mysql insert response data
-                                comm_way.sql_insert('park_page_response',response_json['Data']['PageDataList'][0])
+                                comm_way.sql_insert('park_page_response_data',response_json['Data']['PageDataList'][0])
                                 for i in response_json['Data']['PageDataList']:
                                         print(i)
                         else:
@@ -699,7 +749,7 @@ class Test_park_rule():
                         assert response_json['Success'] == True                       
                         if response_json['Data']['PageDataList']:
                                 # mysql insert response data
-                                comm_way.sql_insert('park_rule_page_response',response_json['Data']['PageDataList'][0])
+                                comm_way.sql_insert('park_rule_page_response_data',response_json['Data']['PageDataList'][0])
                                 for i in response_json['Data']['PageDataList']:
                                         print(i)
                         else:
@@ -859,7 +909,7 @@ class Test_signin_rule():
                         assert response_json['Success'] == True                       
                         if response_json['Data']['PageDataList']:
                                 # mysql insert response data
-                                comm_way.sql_insert('signin_rule_response',response_json['Data']['PageDataList'][0]) 
+                                comm_way.sql_insert('signin_rule_response_data',response_json['Data']['PageDataList'][0]) 
                                 for i in response_json['Data']['PageDataList']:
                                         print(i)
                         else:
@@ -875,7 +925,7 @@ class Test_signin_rule():
                         data['ID'] = signin_rule_response_data['id']
                         data['Typ'] = signin_rule_response_data['typ']       #赠送类型[0-金币、1-积分]  
                         data['Days'] = signin_rule_response_data['days']      #累积达到天数赠送 
-                        data['Integral'] = "3000"                                 #赠送值
+                        data['Integral'] = "50000"                                 #赠送值
                         data['LngValid'] = signin_rule_response_data['lngValid']  #是否长期有效[0-是、1-否]
                         data['IsStop'] = signin_rule_response_data['isStop']    #是否终止[0-正常、1-终止]
                         data['StDt'] = now_time['StDt']
@@ -919,17 +969,17 @@ class Test_signin_rule():
 # 广告
 class Test_advert():
         # 上传广告到s3
-        def test_upload_advert_s3(self,headers,menber,get_s3_advert):   
+        def test_upload_advert_s3(self,headers,member,get_s3_advert):   
                 data={}
                 try:
-                        data['CpnID'] = menber['CpnID']
-                        response=requests.post(url=menber['url'] % '/Guest/UnloadPic',files=get_s3_advert['ticket'],data=data,headers=headers)
+                        data['CpnID'] = member['CpnID']
+                        response=requests.post(url=member['url'] % '/Guest/UnloadPic',files=get_s3_advert['ticket'],data=data,headers=headers)
                         response_json = comm_way.response_dispose(response.json())
                         print(response_json['Message'])
                         assert response.status_code == 200
                         assert response_json['Success'] == True                     
                         # mysql insert response data
-                        comm_way.sql_insert('upload_advert_response',response_json['Data'])
+                        comm_way.sql_insert('upload_advert_response_data',response_json['Data'])
                 except:
                         raise 
         # 添加广告位
@@ -1008,7 +1058,7 @@ class Test_advert():
                         if response_json['Data']['PageDataList']:
                                 for i in response_json['Data']['PageDataList']:
                                         # mysql insert response data
-                                        comm_way.sql_insert('advert_position_response',response_json['Data']['PageDataList'][0])
+                                        comm_way.sql_insert('advert_position_response_data',response_json['Data']['PageDataList'][0])
                                         print(i)
                         else:
                                 print('没有广告位')
@@ -1112,7 +1162,7 @@ class Test_ticket_type():
                         if response_json['Data']['PageDataList']:
                                 for i in response_json['Data']['PageDataList']:
                                         # mysql insert response
-                                        comm_way.sql_insert('ticket_type_page_response',response_json['Data']['PageDataList'][0])
+                                        comm_way.sql_insert('ticket_type_page_response_data',response_json['Data']['PageDataList'][0])
                                         print(i)
                         else:
                                 print('没有券类型')
@@ -1219,7 +1269,7 @@ class Test_ticket_seed():
                         if response_json['Data']['PageDataList']:
                                 for i in response_json['Data']['PageDataList']:
                                         # mysql insert response
-                                        comm_way.sql_insert('ticket_seed_page_response',response_json['Data']['PageDataList'][0])
+                                        comm_way.sql_insert('ticket_seed_page_response_data',response_json['Data']['PageDataList'][0])
                                         print(i)
                         else:
                                 print('没有券种')
@@ -1276,3 +1326,27 @@ class Test_ticket_seed():
                 except:
                         raise
 
+
+
+# # 积分增减
+
+# def test_add_integral(headers,member):
+#         data={}
+#         try:
+#                 data['CpnID'] = '0003'
+#                 data['SubID'] = member['SubID']
+#                 data['CardID'] = '99000301040892'
+#                 data['Intg'] = '500000'
+#                 data['Money'] = '0'
+#                 data['Brf'] = ''
+#                 data['VipID'] = ''
+#                 data['IntgAdd'] = 'True'
+#                 data['OrgID'] = ''
+#                 response=requests.post(url=member['url'] % '/Intg/IntgAddAndSub',data=data,headers=headers)
+#                 response_json = comm_way.response_dispose(response.json())
+#                 print(response_json['Message'])
+#                 assert response.status_code == 200
+#                 assert response_json['Success'] == True
+       
+#         except:
+#                 raise

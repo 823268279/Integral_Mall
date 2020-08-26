@@ -53,12 +53,12 @@ class Way():
         except:
             pass
         finally:
+            now=datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
             for i,n in data.items():
                 # date desc select first col data whether equal now_date
                 sql="select insert_date from %s order by insert_date DESC limit 0,1" % (table)
                 cur.execute(sql)
                 x=cur.fetchall()
-                now=datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
                 # exist update data
                 if x and str(x[0][0])==str(now):
                     sql="update %s set %s='%s' where insert_date='%s'" % (table,i,n,now)

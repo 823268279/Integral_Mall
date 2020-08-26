@@ -54,7 +54,7 @@ class Test_staff_register_login():
                         assert response_json['Success'] == True
                         if response_json['Data']['Data']:
                                 # mysql insert staff_list response data
-                                comm_way.sql_insert('staff_page_response',response_json['Data']['Data'][0])
+                                comm_way.sql_insert('staff_page_response_data',response_json['Data']['Data'][0])
                                 for i in response_json['Data']['Data']:
                                         print(i)
 
@@ -77,24 +77,28 @@ class Test_staff_register_login():
                         assert response_json['Success'] == True
                 except:
                         raise
+
+# 核销
+class Test_check():
         # 订单核销
-        def test_order_check(self,headers,manage,shop_order_page_response_data,staff_page_response_data,shop_commodity_response_data):
+        def test_order_check(self,headers,manage,personal_order_page_response_data,staff_page_response_data):
                 data={}
                 try:
                         data['CpnID'] = manage['CpnID']
                         data['SubID'] = manage['SubID']
-                        data['BllID'] = shop_order_page_response_data['id']      #订单号
-                        data['StffID'] = staff_page_response_data['name']
+                        data['BllID'] = personal_order_page_response_data['bllID']      #订单号
+                        data['AccTyp'] = '0'          #核销类型(0-积分商城订单,1-礼品券)  
+                        data['StffID'] = staff_page_response_data['stffID']       #核销人
                         data['OrgID'] = '0000'      #机构号
                         data['StoreID'] = ''    #店铺号
-                        data['CnvrtID'] = shop_commodity_response_data['gdsCnvrtID']    #上架商品ID
-                        data['Takeaway'] = '2'   #核销来源[1_电脑提货，2_扫码提货]
+                        data['DtlID'] = personal_order_page_response_data['id']    #兑换订单子表ID(不填则核销所有商品)(针对积分商城订单时有效)
+                        data['Takeaway'] = '1'   #核销来源[1_电脑提货，2_扫码提货]
+                        print(data)
                         response=requests.post(url=manage['url'] % '/StoreStff/WriteOff',data=data,headers=headers)
                         response_json = comm_way.response_dispose(response.json())
                         print(response_json['Message'])
                         assert response.status_code == 200
                         assert response_json['Success'] == True
-                        print(response_json['Data'])
                 except:
                         raise
         # 获取核销首页数据

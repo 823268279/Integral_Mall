@@ -122,8 +122,14 @@ def start():
     list_c=[]
     #商品品牌
     list_d=[]
-    for i in range(10):
-        url='http://category.dangdang.com/pg%s-cid4005626.html'% str(i+1)
+    for i in range(7):
+        # 休闲食品
+        # url='http://category.dangdang.com/pg%s-cid4005626.html'% str(i+1)
+        # 酒
+        # url='http://category.dangdang.com/pg%s-cid4005626.html'% str(i+1)
+        # 茶
+        url='http://category.dangdang.com/pg%s-cid4005625.html'% str(i+1)
+
 
         response= session_z.get(url=url,headers=headers,cookies=cookie)
         soup=BeautifulSoup(response.text,'html.parser')
@@ -152,6 +158,7 @@ def start():
         data['commodity_price']=list_c[i]
         data['commodity_brand']=list_d[i]
         data['commodity_place']=random.choice(c)
+        print(data['commodity_code'],data['commodity_name'],data['commodity_image'],data['commodity_price'],data['commodity_brand'],data['commodity_place'])
         comm_way.sql_insert('commodity_data',data)
    
 

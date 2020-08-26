@@ -52,7 +52,7 @@ def headers():
 
 #phone端的配置    
 @pytest.fixture(scope='session')    
-def menber():
+def member():
     data={
         "CpnID":'0001',
         "SubID":'3378049226@qq.com',
@@ -89,7 +89,7 @@ def now_time():
 
 #随机会员数据
 @pytest.fixture(scope='module')   
-def menber_data_random():
+def member_data_random():
     data={}
     a = ['01','02','03','04']
     b = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
@@ -214,7 +214,7 @@ def putaway_activity_data_random():
     # activity name
     data['Name']='上架活动%s'% sum(random.sample(range(100,700),2))
     # exchange integral
-    data['FcttsIntg']=sum(random.sample(range(5000,20000),2))
+    data['FcttsIntg']=sum(random.sample(range(500,1000),2))
     return data
 
 
@@ -229,132 +229,143 @@ def putaway_activity_data_random():
 
 
 
-# mysql select table：organization_response
+# mysql select organization_response_data
 @pytest.fixture(scope='session')
 def organization_response_data():
-    return comm_way.sql_select('organization_response')
-
-# mysql select table：register_request
-@pytest.fixture(scope='session')
-def menber_register_request_data():
-    return comm_way.sql_select('register_request')
+    return comm_way.sql_select('organization_response_data')
 
 
 # mysql select table： register_response
 @pytest.fixture(scope='session')    
-def menber_register_response_data(): 
-    return comm_way.sql_select('register_response')
+def register_response_data(): 
+    return comm_way.sql_select('register_response_data')
 
 
-# mysql select table： menber_data_response
+# mysql select table： member_page_response_data
 @pytest.fixture(scope='session')
-def menber_response_data():
-    return comm_way.sql_select('menber_data_response')
-
-# mysql select table： member_data_page_response
-@pytest.fixture(scope='session')
-def member_data_page_response_data():
-    return comm_way.sql_select('member_data_page_response')
-
-# mysql select table： member_data_response
-@pytest.fixture(scope='session')
-def member_data_response_data():
-    return comm_way.sql_select('member_data_response')
+def member_page_response_data():
+    return comm_way.sql_select('member_page_response_data')
 
     
-# mysql select table： vipcard_data_page_response
+# mysql select table： vipcard_page_response_data
 @pytest.fixture(scope='session')
 def vipcard_page_response_data():
-    return comm_way.sql_select('vipcard_data_page_response')
+    return comm_way.sql_select('vipcard_page_response_data')
 
-# mysql select table： vipcard_data_response
+# mysql select table： vipcard_response_data
 @pytest.fixture(scope='session')
 def vipcard_response_data():
-    return comm_way.sql_select('vipcard_data_response')
+    return comm_way.sql_select('vipcard_response_data')
 
 
-# mysql select table： parking_response
+# mysql select table： park_page_response_data
 @pytest.fixture(scope='session')    
 def park_page_response_data():
-    return comm_way.sql_select('park_page_response')
+    return comm_way.sql_select('park_page_response_data')
 
-# mysql select table： parking_rule_response
+# mysql select table： park_rule_page_response_data
 @pytest.fixture(scope='session')    
 def park_rule_page_response_data():
-    return comm_way.sql_select('park_rule_page_response')
+    return comm_way.sql_select('park_rule_page_response_data')
 
-# mysql select table： upload_ticket_response
-@pytest.fixture(scope='session')    
-def upload_ticket_response_data():
-    return comm_way.sql_select('upload_ticket_response')
 
-# mysql select table： upload_advert_response
-@pytest.fixture(scope='session')    
-def upload_advert_response_data():
-    return comm_way.sql_select('upload_advert_response')
-
-# mysql select table:  signin_rule_response
+# mysql select table:  signin_rule_response_data
 @pytest.fixture(scope='session')    
 def signin_rule_response_data():
-    return comm_way.sql_select('signin_rule_response')
+    return comm_way.sql_select('signin_rule_response_data')
 
-# mysql select table: car_data_response
+
+
+# mysql select table： upload_advert_response_data
 @pytest.fixture(scope='session')    
-def car_data_response_data():
-    return comm_way.sql_select('car_data_response')
+def upload_advert_response_data():
+    return comm_way.sql_select('upload_advert_response_data')
 
-# mysql select table: advert_position_response
+
+# mysql select table: advert_position_response_data
 @pytest.fixture(scope='session')    
 def advert_position_response_data():
-    return comm_way.sql_select('advert_position_response')
+    return comm_way.sql_select('advert_position_response_data')
 
 
-# mysql select table:ticket_type_page_response
+# mysql select table:ticket_type_page_response_data
 @pytest.fixture(scope='session')    
 def ticket_type_page_response_data():
-    return comm_way.sql_select('ticket_type_page_response')
+    return comm_way.sql_select('ticket_type_page_response_data')
 
-# mysql select table:ticket_seed_page_response
+
+# mysql select table:ticket_seed_page_response_data
 @pytest.fixture(scope='session')    
 def ticket_seed_page_response_data():
-    return comm_way.sql_select('ticket_seed_page_response')
+    return comm_way.sql_select('ticket_seed_page_response_data')
 
-# mysql select table:commodity_page_response
+
+# mysql select table： upload_ticket_response_data
+@pytest.fixture(scope='session')    
+def upload_ticket_response_data():
+    return comm_way.sql_select('upload_ticket_response_data')
+
+# mysql select table:commodity_page_response_data
 @pytest.fixture(scope='session')    
 def commodity_page_response_data():
-    return comm_way.sql_select('commodity_page_response')
+    return comm_way.sql_select('commodity_page_response_data')
 
 
-# mysql select table:shop_commodity_page_response
-@pytest.fixture(scope='session')    
-def shop_commodity_page_response_data():
-    return comm_way.sql_select('shop_commodity_page_response')
-
-
-# mysql select table:shop_commodity_response
-@pytest.fixture(scope='session')    
-def shop_commodity_response_data():
-    return comm_way.sql_select('shop_commodity_response')
-
-
-# mysql select table:shop_order_page_response
-@pytest.fixture(scope='session')    
-def shop_order_page_response_data():
-    return comm_way.sql_select('shop_order_page_response')
-
-
-# mysql select table:commodity_putaway_page_response
+# mysql select table:commodity_putaway_page_response_data
 @pytest.fixture(scope='session')    
 def commodity_putaway_page_response_data():
-    return comm_way.sql_select('commodity_putaway_page_response')
+    return comm_way.sql_select('commodity_putaway_page_response_data')
 
 
-# mysql select table:staff_page_response
+# mysql select table:putaway_commodity_page_response_data
 @pytest.fixture(scope='session')    
-def staff_page_response_data():
-    return comm_way.sql_select('staff_page_response')
+def putaway_commodity_page_response_data():
+    return comm_way.sql_select('putaway_commodity_page_response_data')
 
-# mysql select table:park_order_page_response
+
+# mysql select table: car_data_response_data
+@pytest.fixture(scope='session')    
+def car_data_response_data():
+    return comm_way.sql_select('car_data_response_data')
+
+
+# mysql select table:park_order_page_response_data
 @pytest.fixture(scope='session')    
 def park_order_page_response_data():
-    return comm_way.sql_select('park_order_page_response')
+    return comm_way.sql_select('park_order_page_response_data')
+
+
+
+# mysql select table:shop_commodity_page_response_data
+@pytest.fixture(scope='session')    
+def shop_commodity_page_response_data():
+    return comm_way.sql_select('shop_commodity_page_response_data')
+
+
+
+# mysql select table:shop_commodity_response_data
+@pytest.fixture(scope='session')    
+def shop_commodity_response_data():
+    return comm_way.sql_select('shop_commodity_response_data')
+
+
+# mysql select table:shop_order_page_response_data
+@pytest.fixture(scope='session')    
+def shop_order_page_response_data():
+    return comm_way.sql_select('shop_order_page_response_data')
+
+
+# mysql select table:personal_order_page_response_data
+@pytest.fixture(scope='session')    
+def personal_order_page_response_data():
+    return comm_way.sql_select('personal_order_page_response_data')
+
+
+
+# mysql select table:staff_page_response_data
+@pytest.fixture(scope='session')    
+def staff_page_response_data():
+    return comm_way.sql_select('staff_page_response_data')
+
+
+
