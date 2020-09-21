@@ -5,7 +5,40 @@ from comm.comm_way import Way#公共方法
 comm_way=Way()
 
 
-
+#会员手机登录
+def test_member_login(headers,member,register_response_data):
+        data={}
+        try:
+                data['CpnID'] = member['CpnID']
+                data['SubID'] = member['SubID']
+                data['OpnID'] = register_response_data['opnID']
+                data['AppID'] = 'wx85013334c4606398'
+                data['AppSecret'] = '8e9f9471396b6592fef575f7a7ccd391'
+                data['Tel'] = ''
+                data['CrdID'] = ''
+                data['CrdFaceID'] = ''
+                data['OrgID'] = ''
+                data['MemberName'] = ''
+                data['MemberTypID'] = ''
+                data['GstID'] = ''
+                data['UnionID'] = ''
+                data['SMSCode'] = '0000'
+                data['CrmGuestId'] = ''
+                data['IDTyp'] = ''
+                data['IsBind'] = 'false'
+                data['IsMember'] = 'false'
+                data['LvlID'] = ''
+                data['JsCode'] = ''
+                data['SessionKey'] = ''
+                data['IsSource'] = '500'
+                response=requests.post(url=member['url'] % '/Guest/Login',data=data,headers=headers)
+                response_json = comm_way.response_dispose(response.json())
+                print(response_json['Message'])
+                assert response.status_code == 200
+                assert response_json['Success'] == True
+                print(response_json)
+        except:
+                raise
 
 
 class Test_sign_in():
@@ -73,11 +106,10 @@ def test_get_wifi_password(headers,member):
 
 
 
-
 # 小票
-class Test_upload_ticket():
+class Test_upload_receipt():
         # 上传小票到s3
-        def test_upload_ticket_s3(self,headers,member,get_s3_ticket):   
+        def test_upload_receipt_s3(self,headers,member,get_s3_ticket):   
                 data={}
                 try:
                         data['CpnID'] = member['CpnID']
@@ -86,29 +118,31 @@ class Test_upload_ticket():
                         print(response_json['Message'])
                         assert response.status_code == 200
                         assert response_json['Success'] == True
-                        # mysql insert response data
-                        comm_way.sql_insert('upload_ticket_response_data',response_json['Data'])
+                        print(response_json)
+                        comm_way.sql_insert('upload_receipt_s3_response_data',response_json['Data'])
                 except:
                         raise
                 
         # 上传小票
-        def test_upload_ticket(self,headers,member,register_response_data,upload_ticket_response_data):
+        def test_upload_receipt(self,headers,member,register_response_data,upload_receipt_s3_response_data):
                 data={}
                 try:
                         data['CpnID'] = member['CpnID']
                         data['SubID'] = member['SubID']
+                        data['BllImgID'] = '0'
                         data['OpenID'] = register_response_data['opnID']
-                        data['ImgURL'] = upload_ticket_response_data['Data']
+                        data['ImgURL'] = upload_receipt_s3_response_data['Data']
                         response=requests.post(url=member['url'] % '/BllImg/UploadUsrBllImg',data=data,headers=headers)
                         response_json = comm_way.response_dispose(response.json())
                         print(response_json['Message'])
                         assert response.status_code == 200
                         assert response_json['Success'] == True
+                        print(response_json)
                 except:
                         raise
 
         # 查询用户小票上传记录分页
-        def test_get_upload_ticket_record(self,headers,member,vipcard_response_data):
+        def test_get_upload_receipt_record(self,headers,member,vipcard_response_data):
                 data={}
                 try:
                         data['CpnID'] = member['CpnID']
@@ -116,19 +150,59 @@ class Test_upload_ticket():
                         data['CrdID'] = vipcard_response_data['crdID']
                         data['PageIndex'] = 1
                         data['PageSize'] = 10
+                        print(data)
                         response=requests.post(url=member['url'] % '/BllImg/QueryUsrBllImgPage',data=data,headers=headers)
                         response_json = comm_way.response_dispose(response.json())
                         print(response_json['Message'])
                         assert response.status_code == 200
                         assert response_json['Success'] == True
                         if response_json['Data']['BllImgList']:
+                                comm_way.sql_insert("upload_receipt_user_response_data",response_json['Data']['BllImgList'][0])
                                 for i in response_json['Data']['BllImgList']:
                                         print(i)
                         else:
                                 print('没有上传记录')
                 except:
                         raise
-
+        # 查询小票详情
+        def test_get_upload_receipt(self,headers,member,upload_receipt_user_response_data):
+                data={}
+                try:
+                        data['CpnID'] = member['CpnID']
+                        data['SubID'] = member['SubID']
+                        data['ID'] = upload_receipt_user_response_data['id']
+                        response=requests.post(url=member['url'] % '/BllImg/BllImgData',data=data,headers=headers)
+                        response_json = comm_way.response_dispose(response.json())
+                        print(response_json['Message'])
+                        assert response.status_code == 200
+                        assert response_json['Success'] == True
+                        print(response_json)
+                except:
+                        raise
+        # 处理小票
+        def test_dispose_receipt(self,headers,member,vipcard_response_data,upload_receipt_user_response_data,receipt_data_random,store_page_response_data):
+                data={}
+                try:
+                        data['CpnID'] = member['CpnID']
+                        data['SubID'] = member['SubID']
+                        data['OrgID'] = vipcard_response_data['orgID']      #机构号
+                        data['ID'] = upload_receipt_user_response_data['id']         #小票主键
+                        data['IsPass'] = '0'     #是否通过[1-不通过，其他-通过]
+                        data['userID'] = 'miscs3'     #修改人
+                        data['BllNo'] = receipt_data_random['BllNo']      #票据号
+                        data['Store'] = store_page_response_data['storeID']      #店铺
+                        data['Money'] = receipt_data_random['Money']      #金额
+                        data['Brf'] = 'apitest'        #备注
+                        print(data)
+                        response=requests.post(url=member['url'] % '/BllImg/HandleBllImg',data=data,headers=headers)
+                        response_json = comm_way.response_dispose(response.json())
+                        
+                        print(response_json['Message'])
+                        assert response.status_code == 200
+                        assert response_json['Success'] == True
+                        print(response_json)
+                except:
+                        raise           
 
 
 # 车辆
@@ -152,7 +226,6 @@ class Test_car():
                         print(response_json['Message'])
                         assert response.status_code == 200
                         assert response_json['Success'] == True
-                        # mysql insert response data
                         comm_way.sql_insert('car_data_response_data',response_json['Data']['Data'][0])
                         
                 except:
@@ -400,7 +473,7 @@ class Test_park_order():
                         data['SubID'] = manage['SubID']
                         data['PayAppID'] = member['PayAppID']
                         data['PayAppSecrect'] = member['PayAppSecrect']
-                        data['OpenID'] = register_response_data['OpnID']
+                        data['OpenID'] = register_response_data['opnID']
                         data['ParkOrderID'] = park_order_page_response_data['id']
                         data['PayOrderType'] = '6'
                         data['FeeType'] = '3'
@@ -434,6 +507,7 @@ class Test_integral_shop_commodity():
                         print(data)
                         response=requests.post(url=member['url'] % '/IntgShop/QueryGoodsList',data=data,headers=headers)
                         response_json = comm_way.response_dispose(response.json())
+                        print(response_json)
                         print(response_json['Message'])
                         assert response.status_code == 200
                         assert response_json['Success'] == True
@@ -608,12 +682,14 @@ class Test_integral_shop_order():
                         data['VipID'] = vipcard_response_data['vipID']    
                         data['CrdNo'] = vipcard_response_data['crdNo']    
                         data['CrdID'] = vipcard_response_data['crdID']   
-                        print(data)  
                         response=requests.post(url=member['url'] % '/IntgShop/PayCnvrtOrder',data=data,headers=headers)
                         response_json = comm_way.response_dispose(response.json())
-                        print(response_json)
                         print(response_json['Message'])
                         assert response.status_code == 200
                         assert response_json['Success'] == True
+                        print(response_json)
                 except:
                         raise
+
+
+

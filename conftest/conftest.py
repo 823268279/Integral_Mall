@@ -191,8 +191,8 @@ def commodity_data_random():
 def park_order_data_random():
     data={}
     # 停车订单号
-    data['BllNo']=sum(random.sample(range(10000000,999999999),4))
-    data['JoinDt']=(datetime.datetime.now()-datetime.timedelta(hours=random.choice(range(1,24)))).strftime('%Y-%m-%d %H:%M:%S')
+    data['BllNo'] = sum(random.sample(range(10000000,999999999),4))
+    data['JoinDt'] = (datetime.datetime.now()-datetime.timedelta(hours=random.choice(range(1,24)))).strftime('%Y-%m-%d %H:%M:%S')
     return data
 
 # random store data
@@ -200,9 +200,9 @@ def park_order_data_random():
 def store_data_random():
     data={}
     # store code
-    data['StoreID']=sum(random.sample(range(10000000,999999999),4))
+    data['StoreID'] = sum(random.sample(range(10000000,999999999),4))
     # telephone number
-    data['Tel']='13%s%s' % (sum(random.sample(range(10000,100000),1)),sum(random.sample(range(1000,10000),1)))
+    data['Tel'] = '13%s%s' % (sum(random.sample(range(10000,100000),1)),sum(random.sample(range(1000,10000),1)))
     return data
 
 # random putaway activity data
@@ -210,11 +210,32 @@ def store_data_random():
 def putaway_activity_data_random():
     data={}
     # bllno_number
-    data['BllNo']=sum(random.sample(range(10000000,999999999),4))
+    data['BllNo'] = sum(random.sample(range(10000000,999999999),4))
     # activity name
-    data['Name']='上架活动%s'% sum(random.sample(range(100,700),2))
+    data['Name'] = '上架活动%s'% sum(random.sample(range(100,700),2))
     # exchange integral
-    data['FcttsIntg']=sum(random.sample(range(500,1000),2))
+    data['FcttsIntg'] = sum(random.sample(range(500,1000),2))
+    return data
+
+
+# random integral rule
+@pytest.fixture(scope='function') 
+def integral_rule_data_random():
+    data={}
+    # integral thread
+    data['Amt'] = sum(random.sample(range(1,100),2))
+    # integral price
+    data['Intgr'] = sum(random.sample(range(100,500),2))
+    return data
+
+# random receipt data
+@pytest.fixture(scope='function') 
+def receipt_data_random():
+    data={}
+    # bllno_number
+    data['BllNo'] = sum(random.sample(range(10000000,999999999),4))
+    # receipt money
+    data['Money'] = sum(random.sample(range(100,500),2))
     return data
 
 
@@ -225,10 +246,7 @@ def putaway_activity_data_random():
 
 
 
-
-
-
-
+#########################################################################################################@test_001
 # mysql select organization_response_data
 @pytest.fixture(scope='session')
 def organization_response_data():
@@ -246,7 +264,13 @@ def register_response_data():
 def member_page_response_data():
     return comm_way.sql_select('member_page_response_data')
 
-    
+
+# mysql select table： member_response_data
+@pytest.fixture(scope='session')
+def member_response_data():
+    return comm_way.sql_select('member_response_data')
+
+
 # mysql select table： vipcard_page_response_data
 @pytest.fixture(scope='session')
 def vipcard_page_response_data():
@@ -275,7 +299,6 @@ def signin_rule_response_data():
     return comm_way.sql_select('signin_rule_response_data')
 
 
-
 # mysql select table： upload_advert_response_data
 @pytest.fixture(scope='session')    
 def upload_advert_response_data():
@@ -288,22 +311,12 @@ def advert_position_response_data():
     return comm_way.sql_select('advert_position_response_data')
 
 
-# mysql select table:ticket_type_page_response_data
+#########################################################################################################@test_002
+# mysql select table:store_page_response_data
 @pytest.fixture(scope='session')    
-def ticket_type_page_response_data():
-    return comm_way.sql_select('ticket_type_page_response_data')
+def store_page_response_data():
+    return comm_way.sql_select('store_page_response_data')
 
-
-# mysql select table:ticket_seed_page_response_data
-@pytest.fixture(scope='session')    
-def ticket_seed_page_response_data():
-    return comm_way.sql_select('ticket_seed_page_response_data')
-
-
-# mysql select table： upload_ticket_response_data
-@pytest.fixture(scope='session')    
-def upload_ticket_response_data():
-    return comm_way.sql_select('upload_ticket_response_data')
 
 # mysql select table:commodity_page_response_data
 @pytest.fixture(scope='session')    
@@ -322,6 +335,57 @@ def commodity_putaway_page_response_data():
 def putaway_commodity_page_response_data():
     return comm_way.sql_select('putaway_commodity_page_response_data')
 
+#########################################################################################################@test_003
+# mysql select table:ticket_type_page_response_data
+@pytest.fixture(scope='session')    
+def ticket_type_page_response_data():
+    return comm_way.sql_select('ticket_type_page_response_data')
+
+
+# mysql select table:ticket_seed_page_response_data
+@pytest.fixture(scope='session')    
+def ticket_seed_page_response_data():
+    return comm_way.sql_select('ticket_seed_page_response_data')
+
+
+# mysql select table： ticket_activity_response_data
+@pytest.fixture(scope='session')    
+def ticket_activity_response_data():
+    return comm_way.sql_select('ticket_activity_response_data')
+#########################################################################################################@test_004
+# mysql select table： integral_rule_response_data
+@pytest.fixture(scope='session')    
+def integral_rule_response_data():
+    return comm_way.sql_select('integral_rule_response_data')
+
+# mysql select table： integral_coefficient_page_response_data
+@pytest.fixture(scope='session')    
+def integral_coefficient_page_response_data():
+    return comm_way.sql_select('integral_coefficient_page_response_data')
+#########################################################################################################@test_005
+# mysql select table： upload_receipt_s3_response_data
+@pytest.fixture(scope='session')    
+def upload_receipt_s3_response_data():
+    return comm_way.sql_select('upload_receipt_s3_response_data')
+
+
+# mysql select table： upload_receipt_user_response_data
+@pytest.fixture(scope='session')    
+def upload_receipt_user_response_data():
+    return comm_way.sql_select('upload_receipt_user_response_data')
+
+
+# mysql select table:shop_commodity_page_response_data
+@pytest.fixture(scope='session')    
+def shop_commodity_page_response_data():
+    return comm_way.sql_select('shop_commodity_page_response_data')
+
+
+# mysql select table:shop_commodity_response_data
+@pytest.fixture(scope='session')    
+def shop_commodity_response_data():
+    return comm_way.sql_select('shop_commodity_response_data')
+
 
 # mysql select table: car_data_response_data
 @pytest.fixture(scope='session')    
@@ -333,22 +397,7 @@ def car_data_response_data():
 @pytest.fixture(scope='session')    
 def park_order_page_response_data():
     return comm_way.sql_select('park_order_page_response_data')
-
-
-
-# mysql select table:shop_commodity_page_response_data
-@pytest.fixture(scope='session')    
-def shop_commodity_page_response_data():
-    return comm_way.sql_select('shop_commodity_page_response_data')
-
-
-
-# mysql select table:shop_commodity_response_data
-@pytest.fixture(scope='session')    
-def shop_commodity_response_data():
-    return comm_way.sql_select('shop_commodity_response_data')
-
-
+#########################################################################################################@test_006
 # mysql select table:shop_order_page_response_data
 @pytest.fixture(scope='session')    
 def shop_order_page_response_data():
@@ -359,9 +408,7 @@ def shop_order_page_response_data():
 @pytest.fixture(scope='session')    
 def personal_order_page_response_data():
     return comm_way.sql_select('personal_order_page_response_data')
-
-
-
+#########################################################################################################@test_007
 # mysql select table:staff_page_response_data
 @pytest.fixture(scope='session')    
 def staff_page_response_data():
