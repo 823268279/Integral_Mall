@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <title>Test Report</title>
+    <style>body {
+	font-family: Helvetica, Arial, sans-serif;
+	font-size: 12px;
+	/* do not increase min-width as some may use split screens */
+	min-width: 800px;
+	color: #999;
+}
+
+h1 {
+	font-size: 24px;
+	color: black;
+}
+
+h2 {
+	font-size: 16px;
+	color: black;
+}
+
+p {
+    color: black;
+}
+
+a {
+	color: #999;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+/******************************
+ * SUMMARY INFORMATION
+ ******************************/
+
+#environment td {
+	padding: 5px;
+	border: 1px solid #E6E6E6;
+}
+
+#environment tr:nth-child(odd) {
+	background-color: #f6f6f6;
+}
+
+/******************************
+ * TEST RESULT COLORS
+ ******************************/
+span.passed, .passed .col-result {
+	color: green;
+}
+span.skipped, span.xfailed, span.rerun, .skipped .col-result, .xfailed .col-result, .rerun .col-result {
+	color: orange;
+}
+span.error, span.failed, span.xpassed, .error .col-result, .failed .col-result, .xpassed .col-result  {
+	color: red;
+}
+
+
+/******************************
+ * RESULTS TABLE
+ *
+ * 1. Table Layout
+ * 2. Extra
+ * 3. Sorting items
+ *
+ ******************************/
+
+/*------------------
+ * 1. Table Layout
+ *------------------*/
+
+#results-table {
+	border: 1px solid #e6e6e6;
+	color: #999;
+	font-size: 12px;
+	width: 100%
+}
+
+#results-table th, #results-table td {
+	padding: 5px;
+	border: 1px solid #E6E6E6;
+	text-align: left
+}
+#results-table th {
+	font-weight: bold
+}
+
+/*------------------
+ * 2. Extra
+ *------------------*/
+
+.log:only-child {
+	height: inherit
+}
+.log {
+	background-color: #e6e6e6;
+	border: 1px solid #e6e6e6;
+	color: black;
+	display: block;
+	font-family: "Courier New", Courier, monospace;
+	height: 230px;
+	overflow-y: scroll;
+	padding: 5px;
+	white-space: pre-wrap
+}
+div.image {
+	border: 1px solid #e6e6e6;
+	float: right;
+	height: 240px;
+	margin-left: 5px;
+	overflow: hidden;
+	width: 320px
+}
+div.image img {
+	width: 320px
+}
+div.video {
+	border: 1px solid #e6e6e6;
+	float: right;
+	height: 240px;
+	margin-left: 5px;
+	overflow: hidden;
+	width: 320px
+}
+div.video video {
+	overflow: hidden;
+	width: 320px;
+    height: 240px;
+}
+.collapsed {
+	display: none;
+}
+.expander::after {
+	content: " (show details)";
+	color: #BBB;
+	font-style: italic;
+	cursor: pointer;
+}
+.collapser::after {
+	content: " (hide details)";
+	color: #BBB;
+	font-style: italic;
+	cursor: pointer;
+}
+
+/*------------------
+ * 3. Sorting items
+ *------------------*/
+.sortable {
+	cursor: pointer;
+}
+
+.sort-icon {
+	font-size: 0px;
+	float: left;
+	margin-right: 5px;
+	margin-top: 5px;
+	/*triangle*/
+	width: 0;
+	height: 0;
+	border-left: 8px solid transparent;
+	border-right: 8px solid transparent;
+}
+
+.inactive .sort-icon {
+	/*finish triangle*/
+	border-top: 8px solid #E6E6E6;
+}
+
+.asc.active .sort-icon {
+	/*finish triangle*/
+	border-bottom: 8px solid #999;
+}
+
+.desc.active .sort-icon {
+	/*finish triangle*/
+	border-top: 8px solid #999;
+}
+</style></head>
+  <body onLoad="init()">
+    <script>/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+function toArray(iter) {
+    if (iter === null) {
+        return null;
+    }
+    return Array.prototype.slice.call(iter);
+}
+
+function find(selector, elem) {
+    if (!elem) {
+        elem = document;
+    }
+    return elem.querySelector(selector);
+}
+
+function find_all(selector, elem) {
+    if (!elem) {
+        elem = document;
+    }
+    return toArray(elem.querySelectorAll(selector));
+}
+
+function sort_column(elem) {
+    toggle_sort_states(elem);
+    var colIndex = toArray(elem.parentNode.childNodes).indexOf(elem);
+    var key;
+    if (elem.classList.contains('numeric')) {
+        key = key_num;
+    } else if (elem.classList.contains('result')) {
+        key = key_result;
+    } else {
+        key = key_alpha;
+    }
+    sort_table(elem, key(colIndex));
+}
+
+function show_all_extras() {
+    find_all('.col-result').forEach(show_extras);
+}
+
+function hide_all_extras() {
+    find_all('.col-result').forEach(hide_extras);
+}
+
+function show_extras(colresult_elem) {
+    var extras = colresult_elem.parentNode.nextElementSibling;
+    var expandcollapse = colresult_elem.firstElementChild;
+    extras.classList.remove("collapsed");
+    expandcollapse.classList.remove("expander");
+    expandcollapse.classList.add("collapser");
+}
+
+function hide_extras(colresult_elem) {
+    var extras = colresult_elem.parentNode.nextElementSibling;
+    var expandcollapse = colresult_elem.firstElementChild;
+    extras.classList.add("collapsed");
+    expandcollapse.classList.remove("collapser");
+    expandcollapse.classList.add("expander");
+}
+
+function show_filters() {
+    var filter_items = document.getElementsByClassName('filter');
+    for (var i = 0; i < filter_items.length; i++)
+        filter_items[i].hidden = false;
+}
+
+function add_collapse() {
+    // Add links for show/hide all
+    var resulttable = find('table#results-table');
+    var showhideall = document.createElement("p");
+    showhideall.innerHTML = '<a href="javascript:show_all_extras()">Show all details</a> / ' +
+                            '<a href="javascript:hide_all_extras()">Hide all details</a>';
+    resulttable.parentElement.insertBefore(showhideall, resulttable);
+
+    // Add show/hide link to each result
+    find_all('.col-result').forEach(function(elem) {
+        var collapsed = get_query_parameter('collapsed') || 'Passed';
+        var extras = elem.parentNode.nextElementSibling;
+        var expandcollapse = document.createElement("span");
+        if (extras.classList.contains("collapsed")) {
+            expandcollapse.classList.add("expander")
+        } else if (collapsed.includes(elem.innerHTML)) {
+            extras.classList.add("collapsed");
+            expandcollapse.classList.add("expander");
+        } else {
+            expandcollapse.classList.add("collapser");
+        }
+        elem.appendChild(expandcollapse);
+
+        elem.addEventListener("click", function(event) {
+            if (event.currentTarget.parentNode.nextElementSibling.classList.contains("collapsed")) {
+                show_extras(event.currentTarget);
+            } else {
+                hide_extras(event.currentTarget);
+            }
+        });
+    })
+}
+
+function get_query_parameter(name) {
+    var match = RegExp('[?&]' + name + '=([^&]*)').exec(window.location.search);
+    return match && decodeURIComponent(match[1].replace(/\+/g, ' '));
+}
+
+function init () {
+    reset_sort_headers();
+
+    add_collapse();
+
+    show_filters();
+
+    sort_column(find('.initial-sort'));
+
+    find_all('.sortable').forEach(function(elem) {
+        elem.addEventListener("click",
+                              function(event) {
+                                  sort_column(elem);
+                              }, false)
+    });
+
+};
+
+function sort_table(clicked, key_func) {
+    var rows = find_all('.results-table-row');
+    var reversed = !clicked.classList.contains('asc');
+    var sorted_rows = sort(rows, key_func, reversed);
+    /* Whole table is removed here because browsers acts much slower
+     * when appending existing elements.
+     */
+    var thead = document.getElementById("results-table-head");
+    document.getElementById('results-table').remove();
+    var parent = document.createElement("table");
+    parent.id = "results-table";
+    parent.appendChild(thead);
+    sorted_rows.forEach(function(elem) {
+        parent.appendChild(elem);
+    });
+    document.getElementsByTagName("BODY")[0].appendChild(parent);
+}
+
+function sort(items, key_func, reversed) {
+    var sort_array = items.map(function(item, i) {
+        return [key_func(item), i];
+    });
+
+    sort_array.sort(function(a, b) {
+        var key_a = a[0];
+        var key_b = b[0];
+
+        if (key_a == key_b) return 0;
+
+        if (reversed) {
+            return (key_a < key_b ? 1 : -1);
+        } else {
+            return (key_a > key_b ? 1 : -1);
+        }
+    });
+
+    return sort_array.map(function(item) {
+        var index = item[1];
+        return items[index];
+    });
+}
+
+function key_alpha(col_index) {
+    return function(elem) {
+        return elem.childNodes[1].childNodes[col_index].firstChild.data.toLowerCase();
+    };
+}
+
+function key_num(col_index) {
+    return function(elem) {
+        return parseFloat(elem.childNodes[1].childNodes[col_index].firstChild.data);
+    };
+}
+
+function key_result(col_index) {
+    return function(elem) {
+        var strings = ['Error', 'Failed', 'Rerun', 'XFailed', 'XPassed',
+                       'Skipped', 'Passed'];
+        return strings.indexOf(elem.childNodes[1].childNodes[col_index].firstChild.data);
+    };
+}
+
+function reset_sort_headers() {
+    find_all('.sort-icon').forEach(function(elem) {
+        elem.parentNode.removeChild(elem);
+    });
+    find_all('.sortable').forEach(function(elem) {
+        var icon = document.createElement("div");
+        icon.className = "sort-icon";
+        icon.textContent = "vvv";
+        elem.insertBefore(icon, elem.firstChild);
+        elem.classList.remove("desc", "active");
+        elem.classList.add("asc", "inactive");
+    });
+}
+
+function toggle_sort_states(elem) {
+    //if active, toggle between asc and desc
+    if (elem.classList.contains('active')) {
+        elem.classList.toggle('asc');
+        elem.classList.toggle('desc');
+    }
+
+    //if inactive, reset all other functions and add ascending active
+    if (elem.classList.contains('inactive')) {
+        reset_sort_headers();
+        elem.classList.remove('inactive');
+        elem.classList.add('active');
+    }
+}
+
+function is_all_rows_hidden(value) {
+  return value.hidden == false;
+}
+
+function filter_table(elem) {
+    var outcome_att = "data-test-result";
+    var outcome = elem.getAttribute(outcome_att);
+    class_outcome = outcome + " results-table-row";
+    var outcome_rows = document.getElementsByClassName(class_outcome);
+
+    for(var i = 0; i < outcome_rows.length; i++){
+        outcome_rows[i].hidden = !elem.checked;
+    }
+
+    var rows = find_all('.results-table-row').filter(is_all_rows_hidden);
+    var all_rows_hidden = rows.length == 0 ? true : false;
+    var not_found_message = document.getElementById("not-found-message");
+    not_found_message.hidden = !all_rows_hidden;
+}
+</script>
+    <h1>NEWCRM__2020-09-22-10-53-38.html</h1>
+    <p>Report generated on 22-Sep-2020 at 10:54:58 by <a href="https://pypi.python.org/pypi/pytest-html">pytest-html</a> v2.1.1</p>
+    <h2>Environment</h2>
+    <table id="environment">
+      <tr>
+        <td>Packages</td>
+        <td>{"pluggy": "0.13.1", "py": "1.8.1", "pytest": "5.4.1"}</td></tr>
+      <tr>
+        <td>Platform</td>
+        <td>Windows-10-10.0.18362-SP0</td></tr>
+      <tr>
+        <td>Plugins</td>
+        <td>{"html": "2.1.1", "metadata": "1.9.0", "sugar": "0.9.3"}</td></tr>
+      <tr>
+        <td>Python</td>
+        <td>3.8.2</td></tr>
+      <tr>
+        <td>测试地址</td>
+        <td><a href="http://api.newcrm.group.weixin.wuerp.com" target="_blank">http://api.newcrm.group.weixin.wuerp.com</a></td></tr>
+      <tr>
+        <td>项目名称</td>
+        <td>NEW_CRM_v1.0</td></tr></table>
+    <h2>Summary</h2>
+    <p>所属部门: 测试部</p>
+    <p>测试人员: wowo</p>
+    <p>41 tests ran in 78.95 seconds. </p>
+    <p class="filter" hidden="true">(Un)check the boxes to filter the results.</p><input checked="true" class="filter" data-test-result="passed" hidden="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="passed">36 passed</span>, <input checked="true" class="filter" data-test-result="skipped" disabled="true" hidden="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="skipped">0 skipped</span>, <input checked="true" class="filter" data-test-result="failed" hidden="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="failed">5 failed</span>, <input checked="true" class="filter" data-test-result="error" disabled="true" hidden="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="error">0 errors</span>, <input checked="true" class="filter" data-test-result="xfailed" disabled="true" hidden="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="xfailed">0 expected failures</span>, <input checked="true" class="filter" data-test-result="xpassed" disabled="true" hidden="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="xpassed">0 unexpected passes</span>
+    <h2>Results</h2>
+    <table id="results-table">
+      <thead id="results-table-head">
+        <tr>
+          <th class="sortable result initial-sort" col="result">Result</th>
+          <th class="sortable" col="name">Test</th>
+          <th class="sortable numeric" col="duration">Duration</th>
+          <th>Links</th></tr>
+        <tr hidden="true" id="not-found-message">
+          <th colspan="4">No results found. Try to check the filters</th></tr></thead>
+      <tbody class="failed results-table-row">
+        <tr>
+          <td class="col-result">Failed</td>
+          <td class="col-name">conftest/test_001_manage_member.py::Test_member_type::test_update_member_type</td>
+          <td class="col-duration">0.10</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">self = &lt;conftest.test_001_manage_member.Test_member_type object at 0x0000021F6046F580&gt;<br/>headers = {&#x27;Authorization&#x27;: &#x27;eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1MDAiLCJqdGkiOiIxOTQyNWU2NS05NGM5LTQ4YmEtODQ5ZS1iMD...joxNjAwNzQ2ODIwLCJpc3MiOiJVTl9DUk0iLCJhdWQiOiJ3eDVmMWUwNDk1ZGM1NDBiYjEifQ.zUge2XLm2Kbuhy_DRqg1pJF7pKnxxEMrrEGinieUSJE&#x27;}<br/>manage = {&#x27;CpnID&#x27;: &#x27;0001&#x27;, &#x27;SubID&#x27;: &#x27;3378049226@qq.com&#x27;, &#x27;password&#x27;: &#x27;111111&#x27;, &#x27;url&#x27;: &#x27;http://api.newcrm.group.weixin.wuerp.com/manage/v1.0%s&#x27;, ...}<br/>now_time = {&#x27;EdDt&#x27;: &#x27;2020-09-25 10:53:56&#x27;, &#x27;StDt&#x27;: &#x27;2020-09-22 10:53:56&#x27;, &#x27;later&#x27;: &#x27;2020-09-21 10:53:56&#x27;, &#x27;ymd&#x27;: &#x27;2020-09-22&#x27;, ...}<br/><br/>    def test_update_member_type(self,headers,manage,now_time):<br/>            data={}<br/>            try:<br/>                    data[&#x27;CpnID&#x27;] = manage[&#x27;CpnID&#x27;]<br/>                    data[&#x27;VipTpID&#x27;] = member_type[&#x27;vipTpID&#x27;]<br/>                    data[&#x27;Name&#x27;] = member_type[&#x27;name&#x27;]<br/>                    data[&#x27;Crddgr&#x27;] = member_type[&#x27;crddgr&#x27;]<br/>                    data[&#x27;Crdcndt&#x27;] = member_type[&#x27;crdcndt&#x27;]<br/>                    data[&#x27;Stt&#x27;] = member_type[&#x27;stt&#x27;]<br/>                    data[&#x27;Brf&#x27;] = &#x27;apitest&#x27;<br/>                    data[&#x27;Uptr&#x27;] = manage[&#x27;username&#x27;]<br/>                    data[&#x27;UptDtt&#x27;] = now_time[&#x27;ymd_hms&#x27;]<br/>                    data[&#x27;UpdateProNames&#x27;] = &#x27;UptDtt&#x27;<br/>                    response=requests.post(url=manage[&#x27;url&#x27;] % &#x27;/VipTp/Update&#x27;,data=data,headers=headers)<br/>                    print(response.text)<br/>&gt;                   response_json = comm_way.response_dispose(response.json())<br/><br/>..\conftest\test_001_manage_member.py:289: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ <br/><br/>self = &lt;comm.comm_way.Way object at 0x0000021F6038D640&gt;, dict_info = 1<br/><br/>    def response_dispose(self,dict_info):<br/>        new_dict = {}<br/>&gt;       for i, n in dict_info.items():<br/><span class="error">E       AttributeError: &#x27;int&#x27; object has no attribute &#x27;items&#x27;</span><br/><br/>..\comm\comm_way.py:106: AttributeError<br/> ------------------------------Captured stdout call------------------------------ <br/>1
+<br/></div></td></tr></tbody>
+      <tbody class="failed results-table-row">
+        <tr>
+          <td class="col-result">Failed</td>
+          <td class="col-name">conftest/test_001_manage_member.py::Test_parking::test_get_park_data_page</td>
+          <td class="col-duration">2.15</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">self = &lt;conftest.test_001_manage_member.Test_parking object at 0x0000021F606356A0&gt;<br/>headers = {&#x27;Authorization&#x27;: &#x27;eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1MDAiLCJqdGkiOiIxOTQyNWU2NS05NGM5LTQ4YmEtODQ5ZS1iMD...joxNjAwNzQ2ODIwLCJpc3MiOiJVTl9DUk0iLCJhdWQiOiJ3eDVmMWUwNDk1ZGM1NDBiYjEifQ.zUge2XLm2Kbuhy_DRqg1pJF7pKnxxEMrrEGinieUSJE&#x27;}<br/>manage = {&#x27;CpnID&#x27;: &#x27;0001&#x27;, &#x27;SubID&#x27;: &#x27;3378049226@qq.com&#x27;, &#x27;password&#x27;: &#x27;111111&#x27;, &#x27;url&#x27;: &#x27;http://api.newcrm.group.weixin.wuerp.com/manage/v1.0%s&#x27;, ...}<br/><br/>    def test_get_park_data_page(self,headers,manage):<br/>            data={}<br/>            try:<br/>                    data[&#x27;CpnID&#x27;] = manage[&#x27;CpnID&#x27;]<br/>                    data[&#x27;ParkID&#x27;] = &quot;&quot;<br/>                    data[&#x27;IsSupWXPay&#x27;] = &quot;&quot;<br/>                    data[&#x27;IsSupIntg&#x27;] = &quot;&quot;<br/>                    data[&#x27;pageIndex&#x27;] = 1<br/>                    data[&#x27;pageSize&#x27;] = 10<br/>                    data[&#x27;sort&#x27;] = &quot;uptDtt desc&quot;<br/>                    response=requests.post(url=manage[&#x27;url&#x27;] % &#x27;/Park/GetParkConfigPage&#x27;,data=data,headers=headers)<br/>                    response_json = comm_way.response_dispose(response.json())<br/>                    print(response_json[&#x27;Message&#x27;])<br/>                    assert response.status_code == 200<br/>                    assert response_json[&#x27;Success&#x27;] == True<br/>                    if response_json[&#x27;Data&#x27;][&#x27;PageDataList&#x27;]:<br/>&gt;                           comm_way.sql_insert(&#x27;park_page_response_data&#x27;,response_json[&#x27;Data&#x27;][&#x27;PageDataList&#x27;][0])<br/><br/>..\conftest\test_001_manage_member.py:659: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ <br/>..\comm\comm_way.py:49: in sql_insert<br/>    cur.execute(sql)<br/>D:\software\Miniconda3\envs\comm\lib\site-packages\pymysql\cursors.py:170: in execute<br/>    result = self._query(query)<br/>D:\software\Miniconda3\envs\comm\lib\site-packages\pymysql\cursors.py:328: in _query<br/>    conn.query(q)<br/>D:\software\Miniconda3\envs\comm\lib\site-packages\pymysql\connections.py:517: in query<br/>    self._affected_rows = self._read_query_result(unbuffered=unbuffered)<br/>D:\software\Miniconda3\envs\comm\lib\site-packages\pymysql\connections.py:732: in _read_query_result<br/>    result.read()<br/>D:\software\Miniconda3\envs\comm\lib\site-packages\pymysql\connections.py:1075: in read<br/>    first_packet = self.connection._read_packet()<br/>D:\software\Miniconda3\envs\comm\lib\site-packages\pymysql\connections.py:684: in _read_packet<br/>    packet.check_error()<br/>D:\software\Miniconda3\envs\comm\lib\site-packages\pymysql\protocol.py:220: in check_error<br/>    err.raise_mysql_exception(self._data)<br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ <br/><br/>data = b&quot;\xff\x1e\x04#42S22Unknown column &#x27;parkType&#x27; in &#x27;field list&#x27;&quot;<br/><br/>    def raise_mysql_exception(data):<br/>        errno = struct.unpack(&#x27;&lt;h&#x27;, data[1:3])[0]<br/>        is_41 = data[3:4] == b&quot;#&quot;<br/>        if is_41:<br/>            # client protocol 4.1<br/>            errval = data[9:].decode(&#x27;utf-8&#x27;, &#x27;replace&#x27;)<br/>        else:<br/>            errval = data[3:].decode(&#x27;utf-8&#x27;, &#x27;replace&#x27;)<br/>        errorclass = error_map.get(errno, InternalError)<br/>&gt;       raise errorclass(errno, errval)<br/><span class="error">E       pymysql.err.InternalError: (1054, &quot;Unknown column &#x27;parkType&#x27; in &#x27;field list&#x27;&quot;)</span><br/><br/>D:\software\Miniconda3\envs\comm\lib\site-packages\pymysql\err.py:109: InternalError<br/> ------------------------------Captured stdout call------------------------------ <br/>获取数据成功
+<br/></div></td></tr></tbody>
+      <tbody class="failed results-table-row">
+        <tr>
+          <td class="col-result">Failed</td>
+          <td class="col-name">conftest/test_001_manage_member.py::Test_parking::test_update_park_data</td>
+          <td class="col-duration">0.10</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">self = &lt;conftest.test_001_manage_member.Test_parking object at 0x0000021F60649EE0&gt;<br/>headers = {&#x27;Authorization&#x27;: &#x27;eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1MDAiLCJqdGkiOiIxOTQyNWU2NS05NGM5LTQ4YmEtODQ5ZS1iMD...joxNjAwNzQ2ODIwLCJpc3MiOiJVTl9DUk0iLCJhdWQiOiJ3eDVmMWUwNDk1ZGM1NDBiYjEifQ.zUge2XLm2Kbuhy_DRqg1pJF7pKnxxEMrrEGinieUSJE&#x27;}<br/>manage = {&#x27;CpnID&#x27;: &#x27;0001&#x27;, &#x27;SubID&#x27;: &#x27;3378049226@qq.com&#x27;, &#x27;password&#x27;: &#x27;111111&#x27;, &#x27;url&#x27;: &#x27;http://api.newcrm.group.weixin.wuerp.com/manage/v1.0%s&#x27;, ...}, parking_data_random = {&#x27;ParkID&#x27;: 1633107858, &#x27;Tel&#x27;: &#x27;13329906866&#x27;}<br/>now_time = {&#x27;EdDt&#x27;: &#x27;2020-09-25 10:54:18&#x27;, &#x27;StDt&#x27;: &#x27;2020-09-22 10:54:18&#x27;, &#x27;later&#x27;: &#x27;2020-09-21 10:54:18&#x27;, &#x27;ymd&#x27;: &#x27;2020-09-22&#x27;, ...}<br/>park_page_response_data = {&#x27;bllNoUrl&#x27;: &#x27;0&#x27;, &#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;id&#x27;: &#x27;122&#x27;, &#x27;insert_date&#x27;: &#x27;2020-09-04-09-41-54&#x27;, ...}<br/><br/>    def test_update_park_data(self,headers,manage,parking_data_random,now_time,park_page_response_data):<br/>            data={}<br/>            try:<br/>                    data[&#x27;CpnID&#x27;] = manage[&#x27;CpnID&#x27;]<br/>                    data[&#x27;ID&#x27;] = park_page_response_data[&#x27;id&#x27;]<br/>                    data[&#x27;ParkID&#x27;] = park_page_response_data[&#x27;parkID&#x27;]<br/>                    data[&#x27;PayExplain&#x27;] = &quot;apitest&quot;<br/>                    data[&#x27;Tel&#x27;] = park_page_response_data[&#x27;tel&#x27;]<br/>                    data[&#x27;IsSupWXPay&#x27;] = 0<br/>                    data[&#x27;IsSupIntg&#x27;] = 0<br/>                    data[&#x27;IsSupIntgAuto&#x27;] = 0<br/>                    data[&#x27;ParkUrl&#x27;] = &quot;0&quot;<br/>                    data[&#x27;LoginUrl&#x27;] = &quot;0&quot;<br/>                    data[&#x27;BllNoUrl&#x27;] = &quot;0&quot;<br/>                    data[&#x27;ParkUser&#x27;] = &quot;0&quot;<br/>                    data[&#x27;ParkPwd&#x27;] = &quot;0&quot;<br/>                    data[&#x27;ParkKey&#x27;] = &quot;0&quot;<br/>                    data[&#x27;SecretKey&#x27;] = &quot;0&quot;<br/>                    data[&#x27;Uptr&#x27;] = manage[&#x27;username&#x27;]<br/>                    data[&#x27;UptDtt&#x27;] = now_time[&#x27;ymd_hms&#x27;]<br/>                    data[&#x27;updateName&#x27;] = &#x27;ID,CpnID,ParkID,Tel,UptDtt&#x27;<br/>                    response=requests.post(url=manage[&#x27;url&#x27;] % &#x27;/Park/UpdateParkConfig&#x27;,data=data,headers=headers)<br/>                    response_json = comm_way.response_dispose(response.json())<br/>                    print(response_json)<br/>                    print(response_json[&#x27;Message&#x27;])<br/>                    assert response.status_code == 200<br/>&gt;                   assert response_json[&#x27;Success&#x27;] == True<br/><span class="error">E                   assert False == True</span><br/><span class="error">E                     +False</span><br/><span class="error">E                     -True</span><br/><br/>..\conftest\test_001_manage_member.py:693: AssertionError<br/> ------------------------------Captured stdout call------------------------------ <br/>{&#x27;Success&#x27;: False, &#x27;Errorcode&#x27;: 200, &#x27;Message&#x27;: &#x27;修改失败&#x27;, &#x27;Data&#x27;: None}
+修改失败
+<br/></div></td></tr></tbody>
+      <tbody class="failed results-table-row">
+        <tr>
+          <td class="col-result">Failed</td>
+          <td class="col-name">conftest/test_001_manage_member.py::Test_parking::test_get_park_data</td>
+          <td class="col-duration">0.09</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">self = &lt;conftest.test_001_manage_member.Test_parking object at 0x0000021F6076D9D0&gt;<br/>headers = {&#x27;Authorization&#x27;: &#x27;eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1MDAiLCJqdGkiOiIxOTQyNWU2NS05NGM5LTQ4YmEtODQ5ZS1iMD...joxNjAwNzQ2ODIwLCJpc3MiOiJVTl9DUk0iLCJhdWQiOiJ3eDVmMWUwNDk1ZGM1NDBiYjEifQ.zUge2XLm2Kbuhy_DRqg1pJF7pKnxxEMrrEGinieUSJE&#x27;}<br/>manage = {&#x27;CpnID&#x27;: &#x27;0001&#x27;, &#x27;SubID&#x27;: &#x27;3378049226@qq.com&#x27;, &#x27;password&#x27;: &#x27;111111&#x27;, &#x27;url&#x27;: &#x27;http://api.newcrm.group.weixin.wuerp.com/manage/v1.0%s&#x27;, ...}<br/>park_page_response_data = {&#x27;bllNoUrl&#x27;: &#x27;0&#x27;, &#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;id&#x27;: &#x27;122&#x27;, &#x27;insert_date&#x27;: &#x27;2020-09-04-09-41-54&#x27;, ...}<br/><br/>    def test_get_park_data(self,headers,manage,park_page_response_data):<br/>            data={}<br/>            try:<br/>                    data[&#x27;CpnID&#x27;]=manage[&#x27;CpnID&#x27;]<br/>                    data[&#x27;ID&#x27;]=park_page_response_data[&#x27;id&#x27;]<br/>                    response=requests.post(url=manage[&#x27;url&#x27;] % &#x27;/Park/GetParkConfigSinger&#x27;,data=data,headers=headers)<br/>                    response_json = comm_way.response_dispose(response.json())<br/>                    print(response_json[&#x27;Message&#x27;])<br/>                    assert response.status_code == 200<br/>&gt;                   assert response_json[&#x27;Success&#x27;] == True<br/><span class="error">E                   assert False == True</span><br/><span class="error">E                     +False</span><br/><span class="error">E                     -True</span><br/><br/>..\conftest\test_001_manage_member.py:706: AssertionError<br/> ------------------------------Captured stdout call------------------------------ <br/>获取失败
+<br/></div></td></tr></tbody>
+      <tbody class="failed results-table-row">
+        <tr>
+          <td class="col-result">Failed</td>
+          <td class="col-name">conftest/test_001_manage_member.py::Test_park_rule::test_add_park_rule</td>
+          <td class="col-duration">0.20</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">self = &lt;conftest.test_001_manage_member.Test_park_rule object at 0x0000021F606AAAF0&gt;<br/>headers = {&#x27;Authorization&#x27;: &#x27;eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1MDAiLCJqdGkiOiIxOTQyNWU2NS05NGM5LTQ4YmEtODQ5ZS1iMD...joxNjAwNzQ2ODIwLCJpc3MiOiJVTl9DUk0iLCJhdWQiOiJ3eDVmMWUwNDk1ZGM1NDBiYjEifQ.zUge2XLm2Kbuhy_DRqg1pJF7pKnxxEMrrEGinieUSJE&#x27;}<br/>manage = {&#x27;CpnID&#x27;: &#x27;0001&#x27;, &#x27;SubID&#x27;: &#x27;3378049226@qq.com&#x27;, &#x27;password&#x27;: &#x27;111111&#x27;, &#x27;url&#x27;: &#x27;http://api.newcrm.group.weixin.wuerp.com/manage/v1.0%s&#x27;, ...}<br/>now_time = {&#x27;EdDt&#x27;: &#x27;2020-09-25 10:54:19&#x27;, &#x27;StDt&#x27;: &#x27;2020-09-22 10:54:19&#x27;, &#x27;later&#x27;: &#x27;2020-09-21 10:54:19&#x27;, &#x27;ymd&#x27;: &#x27;2020-09-22&#x27;, ...}<br/>park_page_response_data = {&#x27;bllNoUrl&#x27;: &#x27;0&#x27;, &#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;id&#x27;: &#x27;122&#x27;, &#x27;insert_date&#x27;: &#x27;2020-09-04-09-41-54&#x27;, ...}<br/><br/>    def test_add_park_rule(self,headers,manage,now_time,park_page_response_data):<br/>            for i in range(1,random.choice(range(3,6))):<br/>                    data={}<br/>                    try:<br/>                            data[&#x27;CpnID&#x27;] = manage[&#x27;CpnID&#x27;]<br/>                            data[&#x27;SubID&#x27;] = manage[&#x27;SubID&#x27;]<br/>                            data[&#x27;ID&#x27;] = park_page_response_data[&#x27;id&#x27;]<br/>                            data[&#x27;ParkID&#x27;] = park_page_response_data[&#x27;parkID&#x27;]    #停车场编号<br/>                            data[&#x27;VipTpID&#x27;] = &#x27;0%s&#x27;% i                      #会员类型ID<br/>                            data[&#x27;IsEv&#x27;] = &quot;0&quot;                              #是否是新能源车牌(0-所有车型，1-新能源车票)<br/>                            data[&#x27;CalculaTyp&#x27;] = &quot;1&quot;                        #计算类型(0-按次数计算，1-按时长计算)<br/>                            data[&#x27;FreeMinute&#x27;] = &quot;0&quot;                        #免费时长(多少分钟内免费)<br/>                            data[&#x27;StartMinute&#x27;] = &quot;0&quot;                       #起步时长<br/>                            data[&#x27;StartMoney&#x27;] = &quot;5&quot;                        #起步金额<br/>                            data[&#x27;StartIntg&#x27;] = &quot;20&quot;                         #起步积分<br/>                            data[&#x27;StartGold&#x27;] = &quot;0&quot;                         #起步金币<br/>                            data[&#x27;IntrvalTime&#x27;] = &quot;30&quot;                       #单价时间<br/>                            data[&#x27;IntrvalMoney&#x27;] = &quot;20&quot;                      #单价金额<br/>                            data[&#x27;IntrvalIntg&#x27;] = &quot;200&quot;                       #单价积分<br/>                            data[&#x27;IntrvalGold&#x27;] = &quot;0&quot;                       #单价金币<br/>                            data[&#x27;ConsumMoney&#x27;] = &quot;0&quot;                       #消费金额线<br/>                            data[&#x27;ConsFreeMinute&#x27;] = &quot;0&quot;                    #优惠时长<br/>                            data[&#x27;IntgSupportHour&#x27;] = &quot;0&quot;<br/>                            data[&#x27;Uptr&#x27;] = manage[&#x27;username&#x27;]<br/>                            data[&#x27;UptDtt&#x27;] = now_time[&#x27;ymd_hms&#x27;]<br/>                            response=requests.post(url=manage[&#x27;url&#x27;] % &#x27;/Park/AddParkRule&#x27;,data=data,headers=headers)<br/>                            response_json = comm_way.response_dispose(response.json())<br/>                            print(response_json[&#x27;Message&#x27;])<br/>                            assert response.status_code == 200<br/>&gt;                           assert response_json[&#x27;Success&#x27;] == True<br/><span class="error">E                           assert False == True</span><br/><span class="error">E                             +False</span><br/><span class="error">E                             -True</span><br/><br/>..\conftest\test_001_manage_member.py:743: AssertionError<br/> ------------------------------Captured stdout call------------------------------ <br/>添加成功
+已存在相同编号的停车场
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">conftest/test_001_manage_member.py::Test_company_organization::test_get_company_organization_page</td>
+          <td class="col-duration">0.11</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -----------------------------Captured stdout setup------------------------------ <br/>获取授权成功
+<br/> ------------------------------Captured stdout call------------------------------ <br/>获取数据成功
+{&#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;subID&#x27;: &#x27;3378049226@qq.com&#x27;, &#x27;orgID&#x27;: &#x27;0000&#x27;, &#x27;name&#x27;: &#x27;总部&#x27;, &#x27;hlpCd&#x27;: None, &#x27;prtID&#x27;: None, &#x27;type&#x27;: &#x27;001&#x27;, &#x27;subType&#x27;: &#x27;1&#x27;, &#x27;brchID&#x27;: &#x27;&#x27;, &#x27;city&#x27;: &#x27;吉林省-松原市-乾安县&#x27;, &#x27;lnkr&#x27;: None, &#x27;adr&#x27;: &#x27;测试地址&#x27;, &#x27;tel&#x27;: None, &#x27;phone&#x27;: &#x27;18408271286&#x27;, &#x27;fax&#x27;: None, &#x27;lvl&#x27;: 1, &#x27;stt&#x27;: 0, &#x27;endFlg&#x27;: &#x27;F&#x27;, &#x27;intgact&#x27;: &#x27;T&#x27;, &#x27;isMakeCrd&#x27;: 1, &#x27;isSendCrd&#x27;: 1, &#x27;brf&#x27;: None, &#x27;uptDtt&#x27;: &#x27;2020-09-14 16:51:13&#x27;}
+{&#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;subID&#x27;: &#x27;3378049226@qq.com&#x27;, &#x27;orgID&#x27;: &#x27;1001&#x27;, &#x27;name&#x27;: &#x27;大卖场一&#x27;, &#x27;hlpCd&#x27;: None, &#x27;prtID&#x27;: None, &#x27;type&#x27;: &#x27;004&#x27;, &#x27;subType&#x27;: &#x27;1&#x27;, &#x27;brchID&#x27;: &#x27;&#x27;, &#x27;city&#x27;: &#x27;吉林省&#x27;, &#x27;lnkr&#x27;: None, &#x27;adr&#x27;: &#x27;cessssssss&#x27;, &#x27;tel&#x27;: None, &#x27;phone&#x27;: &#x27;1254854275&#x27;, &#x27;fax&#x27;: None, &#x27;lvl&#x27;: 1, &#x27;stt&#x27;: 0, &#x27;endFlg&#x27;: &#x27;F&#x27;, &#x27;intgact&#x27;: &#x27;F&#x27;, &#x27;isMakeCrd&#x27;: 1, &#x27;isSendCrd&#x27;: 1, &#x27;brf&#x27;: &#x27;123123123123123&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-09-14 09:41:30&#x27;}
+{&#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;subID&#x27;: &#x27;3378049226@qq.com&#x27;, &#x27;orgID&#x27;: &#x27;1002&#x27;, &#x27;name&#x27;: &#x27;大卖场二&#x27;, &#x27;hlpCd&#x27;: None, &#x27;prtID&#x27;: None, &#x27;type&#x27;: &#x27;004&#x27;, &#x27;subType&#x27;: &#x27;1&#x27;, &#x27;brchID&#x27;: &#x27;&#x27;, &#x27;city&#x27;: &#x27;绵阳&#x27;, &#x27;lnkr&#x27;: None, &#x27;adr&#x27;: &#x27;绵阳大道180号&#x27;, &#x27;tel&#x27;: None, &#x27;phone&#x27;: &#x27;18132253341&#x27;, &#x27;fax&#x27;: None, &#x27;lvl&#x27;: 1, &#x27;stt&#x27;: 0, &#x27;endFlg&#x27;: &#x27;F&#x27;, &#x27;intgact&#x27;: &#x27;F&#x27;, &#x27;isMakeCrd&#x27;: 1, &#x27;isSendCrd&#x27;: 1, &#x27;brf&#x27;: &#x27;apitest12321312213123123&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-09-11 18:16:07&#x27;}
+{&#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;subID&#x27;: &#x27;3378049226@qq.com&#x27;, &#x27;orgID&#x27;: &#x27;1003&#x27;, &#x27;name&#x27;: &#x27;大卖场三&#x27;, &#x27;hlpCd&#x27;: None, &#x27;prtID&#x27;: None, &#x27;type&#x27;: &#x27;004&#x27;, &#x27;subType&#x27;: &#x27;1&#x27;, &#x27;brchID&#x27;: &#x27;&#x27;, &#x27;city&#x27;: &#x27;重庆&#x27;, &#x27;lnkr&#x27;: None, &#x27;adr&#x27;: &#x27;解放碑&#x27;, &#x27;tel&#x27;: None, &#x27;phone&#x27;: &#x27;18132255675&#x27;, &#x27;fax&#x27;: None, &#x27;lvl&#x27;: 1, &#x27;stt&#x27;: 0, &#x27;endFlg&#x27;: &#x27;F&#x27;, &#x27;intgact&#x27;: &#x27;F&#x27;, &#x27;isMakeCrd&#x27;: 1, &#x27;isSendCrd&#x27;: 1, &#x27;brf&#x27;: &#x27;apitest&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-08-05 10:04:37&#x27;}
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">conftest/test_001_manage_member.py::Test_company_organization::test_get_company_organization_all</td>
+          <td class="col-duration">8.28</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>获取成功
+{&#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;subID&#x27;: &#x27;3378049226@qq.com&#x27;, &#x27;orgID&#x27;: &#x27;0000&#x27;, &#x27;name&#x27;: &#x27;总部&#x27;, &#x27;hlpCd&#x27;: None, &#x27;prtID&#x27;: None, &#x27;type&#x27;: &#x27;001&#x27;, &#x27;subType&#x27;: &#x27;1&#x27;, &#x27;brchID&#x27;: &#x27;&#x27;, &#x27;city&#x27;: &#x27;吉林省-松原市-乾安县&#x27;, &#x27;lnkr&#x27;: None, &#x27;adr&#x27;: &#x27;测试地址&#x27;, &#x27;tel&#x27;: None, &#x27;phone&#x27;: &#x27;18408271286&#x27;, &#x27;fax&#x27;: None, &#x27;lvl&#x27;: 1, &#x27;stt&#x27;: 0, &#x27;endFlg&#x27;: &#x27;F&#x27;, &#x27;intgact&#x27;: &#x27;T&#x27;, &#x27;isMakeCrd&#x27;: 1, &#x27;isSendCrd&#x27;: 1, &#x27;brf&#x27;: None, &#x27;uptDtt&#x27;: &#x27;2020-09-14 16:51:13&#x27;}
+{&#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;subID&#x27;: &#x27;3378049226@qq.com&#x27;, &#x27;orgID&#x27;: &#x27;1001&#x27;, &#x27;name&#x27;: &#x27;大卖场一&#x27;, &#x27;hlpCd&#x27;: None, &#x27;prtID&#x27;: None, &#x27;type&#x27;: &#x27;004&#x27;, &#x27;subType&#x27;: &#x27;1&#x27;, &#x27;brchID&#x27;: &#x27;&#x27;, &#x27;city&#x27;: &#x27;吉林省&#x27;, &#x27;lnkr&#x27;: None, &#x27;adr&#x27;: &#x27;cessssssss&#x27;, &#x27;tel&#x27;: None, &#x27;phone&#x27;: &#x27;1254854275&#x27;, &#x27;fax&#x27;: None, &#x27;lvl&#x27;: 1, &#x27;stt&#x27;: 0, &#x27;endFlg&#x27;: &#x27;F&#x27;, &#x27;intgact&#x27;: &#x27;F&#x27;, &#x27;isMakeCrd&#x27;: 1, &#x27;isSendCrd&#x27;: 1, &#x27;brf&#x27;: &#x27;123123123123123&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-09-14 09:41:30&#x27;}
+{&#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;subID&#x27;: &#x27;3378049226@qq.com&#x27;, &#x27;orgID&#x27;: &#x27;1002&#x27;, &#x27;name&#x27;: &#x27;大卖场二&#x27;, &#x27;hlpCd&#x27;: None, &#x27;prtID&#x27;: None, &#x27;type&#x27;: &#x27;004&#x27;, &#x27;subType&#x27;: &#x27;1&#x27;, &#x27;brchID&#x27;: &#x27;&#x27;, &#x27;city&#x27;: &#x27;绵阳&#x27;, &#x27;lnkr&#x27;: None, &#x27;adr&#x27;: &#x27;绵阳大道180号&#x27;, &#x27;tel&#x27;: None, &#x27;phone&#x27;: &#x27;18132253341&#x27;, &#x27;fax&#x27;: None, &#x27;lvl&#x27;: 1, &#x27;stt&#x27;: 0, &#x27;endFlg&#x27;: &#x27;F&#x27;, &#x27;intgact&#x27;: &#x27;F&#x27;, &#x27;isMakeCrd&#x27;: 1, &#x27;isSendCrd&#x27;: 1, &#x27;brf&#x27;: &#x27;apitest12321312213123123&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-09-11 18:16:07&#x27;}
+{&#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;subID&#x27;: &#x27;3378049226@qq.com&#x27;, &#x27;orgID&#x27;: &#x27;1003&#x27;, &#x27;name&#x27;: &#x27;大卖场三&#x27;, &#x27;hlpCd&#x27;: None, &#x27;prtID&#x27;: None, &#x27;type&#x27;: &#x27;004&#x27;, &#x27;subType&#x27;: &#x27;1&#x27;, &#x27;brchID&#x27;: &#x27;&#x27;, &#x27;city&#x27;: &#x27;重庆&#x27;, &#x27;lnkr&#x27;: None, &#x27;adr&#x27;: &#x27;解放碑&#x27;, &#x27;tel&#x27;: None, &#x27;phone&#x27;: &#x27;18132255675&#x27;, &#x27;fax&#x27;: None, &#x27;lvl&#x27;: 1, &#x27;stt&#x27;: 0, &#x27;endFlg&#x27;: &#x27;F&#x27;, &#x27;intgact&#x27;: &#x27;F&#x27;, &#x27;isMakeCrd&#x27;: 1, &#x27;isSendCrd&#x27;: 1, &#x27;brf&#x27;: &#x27;apitest&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-08-05 10:04:37&#x27;}
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">conftest/test_001_manage_member.py::test_smscode</td>
+          <td class="col-duration">0.08</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>200
+{&#x27;success&#x27;: False, &#x27;errorCode&#x27;: 404, &#x27;message&#x27;: &#x27;您的请求地址错误！&#x27;, &#x27;data&#x27;: &#x27;&#x27;}
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">conftest/test_001_manage_member.py::test_member_register</td>
+          <td class="col-duration">3.33</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>注册成功
+{&#x27;nickName&#x27;: None, &#x27;name&#x27;: &#x27;FJrsbqy&#x27;, &#x27;avt&#x27;: None, &#x27;opnID&#x27;: &#x27;SBMIKHV-hqt-ijhtOMNXB-OG&#x27;, &#x27;unionID&#x27;: &#x27;SBMIKHV-hqt-ijhtOMNXB-OG&#x27;, &#x27;tel&#x27;: &#x27;13220166640&#x27;, &#x27;smsCode&#x27;: None, &#x27;crdFaceID&#x27;: &#x27;99000100000237&#x27;, &#x27;crdID&#x27;: &#x27;199000100000237934&#x27;, &#x27;crmGuestId&#x27;: &#x27;99000100000237&#x27;, &#x27;idTyp&#x27;: None, &#x27;isBind&#x27;: None, &#x27;isMember&#x27;: True, &#x27;lvlID&#x27;: None, &#x27;memberName&#x27;: &#x27;普通卡&#x27;, &#x27;memberTypID&#x27;: &#x27;01&#x27;, &#x27;orgID&#x27;: &#x27;0000&#x27;, &#x27;jsCode&#x27;: None, &#x27;appID&#x27;: None, &#x27;appSecret&#x27;: None, &#x27;sessionKey&#x27;: None, &#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;subID&#x27;: &#x27;3378049226@qq.com&#x27;, &#x27;idSource&#x27;: &#x27;100&#x27;, &#x27;gstID&#x27;: 1650, &#x27;vipTpStt&#x27;: &#x27;0&#x27;}
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">conftest/test_001_manage_member.py::Test_login::test_get_code</td>
+          <td class="col-duration">0.08</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>获取验证码成功
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">conftest/test_001_manage_member.py::Test_login::test_login_correct</td>
+          <td class="col-duration">1.90</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">conftest/test_001_manage_member.py::Test_login::test_login_error_pwd</td>
+          <td class="col-duration">0.19</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>帐号或密码错误
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">conftest/test_001_manage_member.py::Test_login::test_get_user_message</td>
+          <td class="col-duration">0.08</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>{&#x27;Success&#x27;: True, &#x27;Errorcode&#x27;: 0, &#x27;Message&#x27;: &#x27;&#x27;, &#x27;Data&#x27;: {&#x27;Data&#x27;: {&#x27;appID&#x27;: &#x27;500001&#x27;, &#x27;usrInfo&#x27;: {&#x27;cpnStfLst&#x27;: [{&#x27;cpnStfAdds&#x27;: [], &#x27;cpnId&#x27;: &#x27;200002&#x27;, &#x27;stfId&#x27;: &#x27;001&#x27;, &#x27;usrId&#x27;: 884, &#x27;stfCd&#x27;: &#x27;&#x27;, &#x27;orgId&#x27;: &#x27;0000&#x27;, &#x27;dptId&#x27;: &#x27;01&#x27;, &#x27;pstId&#x27;: &#x27;0101&#x27;, &#x27;indt&#x27;: &#x27;2020-04-13 00:00:00&#x27;, &#x27;stt&#x27;: 0, &#x27;brf&#x27;: &#x27;&#x27;, &#x27;uptr&#x27;: 883, &#x27;uptDtt&#x27;: &#x27;2020-04-14 17:24:31&#x27;, &#x27;orgName&#x27;: &#x27;总部&#x27;, &#x27;dptName&#x27;: &#x27;测试部门&#x27;, &#x27;pstName&#x27;: &#x27;测试岗位&#x27;, &#x27;orgTp&#x27;: &#x27;01&#x27;}], &#x27;pstClsLst&#x27;: None, &#x27;pstGrpLst&#x27;: [{&#x27;cpnId&#x27;: &#x27;200002&#x27;, &#x27;orgTp&#x27;: &#x27;01&#x27;, &#x27;pst&#x27;: &#x27;0101&#x27;, &#x27;appId&#x27;: &#x27;500001&#x27;, &#x27;grpId&#x27;: &#x27;0002&#x27;, &#x27;dpt&#x27;: &#x27;01&#x27;, &#x27;stt&#x27;: 0, &#x27;brf&#x27;: &#x27;&#x27;, &#x27;uptr&#x27;: 0, &#x27;uptDtt&#x27;: &#x27;2020-04-13 18:06:19&#x27;}], &#x27;cpnStf&#x27;: {&#x27;cpnId&#x27;: &#x27;200002&#x27;, &#x27;stfId&#x27;: &#x27;001&#x27;, &#x27;usrId&#x27;: 884, &#x27;stfCd&#x27;: &#x27;&#x27;, &#x27;orgId&#x27;: &#x27;0000&#x27;, &#x27;dptId&#x27;: &#x27;01&#x27;, &#x27;pstId&#x27;: &#x27;0101&#x27;, &#x27;indt&#x27;: &#x27;2020-04-13 00:00:00&#x27;, &#x27;stt&#x27;: 0, &#x27;brf&#x27;: &#x27;&#x27;, &#x27;deleted&#x27;: &#x27;N&#x27;, &#x27;uptr&#x27;: 883, &#x27;uptDtt&#x27;: &#x27;2020-04-14 17:24:31&#x27;}, &#x27;cpnOrg&#x27;: &#x27;&#x27;, &#x27;pstCls&#x27;: &#x27;&#x27;}, &#x27;mdlLst&#x27;: None, &#x27;usrOrgs&#x27;: &#x27;&#x27;, &#x27;usrClss&#x27;: &#x27;&#x27;, &#x27;usrPst&#x27;: &#x27;&#x27;, &#x27;usrDpt&#x27;: &#x27;&#x27;, &#x27;usrOrg&#x27;: &#x27;&#x27;, &#x27;usrOrgTp&#x27;: &#x27;01&#x27;, &#x27;usrGrp&#x27;: &#x27;&#x27;, &#x27;usrOrgType&#x27;: &#x27;&#x27;, &#x27;id&#x27;: 884, &#x27;usrFlg&#x27;: &#x27;miscs3&#x27;, &#x27;name&#x27;: &#x27;miscs3&#x27;, &#x27;userName&#x27;: &#x27;[miscs3]miscs3&#x27;, &#x27;pwd&#x27;: &#x27;6456C7FAC445F3C1C3E7F4405159D&#x27;, &#x27;pwdDt&#x27;: &#x27;2020-04-13 18:11:19&#x27;, &#x27;tel&#x27;: &#x27;&#x27;, &#x27;email&#x27;: &#x27;&#x27;, &#x27;brth&#x27;: &#x27;&#x27;, &#x27;sex&#x27;: &#x27;男&#x27;, &#x27;avt&#x27;: &#x27;&#x27;, &#x27;cpnId&#x27;: &#x27;200002&#x27;, &#x27;usrTp&#x27;: 0, &#x27;stt&#x27;: 0, &#x27;chkWrd&#x27;: &#x27;FBD48275EE9E8D5F9B2DB0CE38A2A&#x27;, &#x27;brf&#x27;: &#x27;&#x27;, &#x27;uptr&#x27;: 886, &#x27;uptDtt&#x27;: &#x27;2020-04-14 17:18:43&#x27;, &#x27;cpnName&#x27;: &#x27;crm测试企业&#x27;, &#x27;cpnUsrOrgs&#x27;: [{&#x27;cpnId&#x27;: &#x27;200002&#x27;, &#x27;usrId&#x27;: 884, &#x27;orgId&#x27;: &#x27;0000&#x27;, &#x27;stt&#x27;: 0, &#x27;brf&#x27;: &#x27;&#x27;, &#x27;uptr&#x27;: 0, &#x27;uptDtt&#x27;: &#x27;2020-04-13 18:07:41&#x27;, &#x27;orgName&#x27;: &#x27;总部&#x27;}], &#x27;usrCpns&#x27;: [], &#x27;cpnGrps&#x27;: [{&#x27;cpnId&#x27;: &#x27;200002&#x27;, &#x27;appId&#x27;: &#x27;000102&#x27;, &#x27;grpId&#x27;: &#x27;0001&#x27;, &#x27;stt&#x27;: 0, &#x27;brf&#x27;: &#x27;&#x27;, &#x27;uptr&#x27;: 0, &#x27;uptDtt&#x27;: &#x27;2020-04-13 18:12:34&#x27;, &#x27;name&#x27;: &#x27;&#x27;, &#x27;chkWrd&#x27;: &#x27;&#x27;}, {&#x27;cpnId&#x27;: &#x27;200002&#x27;, &#x27;appId&#x27;: &#x27;500001&#x27;, &#x27;grpId&#x27;: &#x27;0002&#x27;, &#x27;stt&#x27;: 0, &#x27;brf&#x27;: &#x27;&#x27;, &#x27;uptr&#x27;: 0, &#x27;uptDtt&#x27;: &#x27;2020-04-13 18:06:19&#x27;, &#x27;name&#x27;: &#x27;&#x27;, &#x27;chkWrd&#x27;: &#x27;&#x27;}], &#x27;usrGrps&#x27;: []}}}
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">conftest/test_001_manage_member.py::Test_manage_index::test_get_member_sum</td>
+          <td class="col-duration">0.11</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>{&#x27;Success&#x27;: True, &#x27;Errorcode&#x27;: 0, &#x27;Message&#x27;: &#x27;获取成功&#x27;, &#x27;Data&#x27;: {&#x27;Data&#x27;: [{&#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;subID&#x27;: &#x27;3378049226@qq.com&#x27;, &#x27;num&#x27;: 14, &#x27;idSource&#x27;: None}]}}
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">conftest/test_001_manage_member.py::Test_manage_index::test_get_member_register_num</td>
+          <td class="col-duration">0.10</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>{&#x27;Success&#x27;: True, &#x27;Errorcode&#x27;: 0, &#x27;Message&#x27;: &#x27;获取会员每日注册信息成功!&#x27;, &#x27;Data&#x27;: {&#x27;Data&#x27;: [{&#x27;days&#x27;: &#x27;2020-08-25&#x27;, &#x27;dayCount&#x27;: &#x27;1&#x27;, &#x27;allCount&#x27;: &#x27;3&#x27;}]}}
+获取会员每日注册信息成功!
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">conftest/test_001_manage_member.py::Test_member_type::test_get_member_type_page</td>
+          <td class="col-duration">0.12</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>获取会员类型列表成功
+{&#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;vipTpID&#x27;: &#x27;01&#x27;, &#x27;name&#x27;: &#x27;普通卡&#x27;, &#x27;crddgr&#x27;: 1, &#x27;crdcndt&#x27;: &#x27;&#x27;, &#x27;stt&#x27;: 0, &#x27;sttName&#x27;: &#x27;启用&#x27;, &#x27;brf&#x27;: &#x27;apitest&#x27;, &#x27;uptr&#x27;: &#x27;&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-09-04 11:01:31&#x27;}
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">conftest/test_001_manage_member.py::Test_member_type::test_get_member_type</td>
+          <td class="col-duration">0.15</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>获取会员类型成功!
+{&#x27;Success&#x27;: True, &#x27;Errorcode&#x27;: 0, &#x27;Message&#x27;: &#x27;获取会员类型成功!&#x27;, &#x27;Data&#x27;: {&#x27;VipTp&#x27;: {&#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;vipTpID&#x27;: &#x27;01&#x27;, &#x27;name&#x27;: &#x27;普通卡&#x27;, &#x27;crddgr&#x27;: 1, &#x27;crdcndt&#x27;: None, &#x27;stt&#x27;: 0, &#x27;brf&#x27;: &#x27;apitest&#x27;, &#x27;uptr&#x27;: &#x27;&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-09-22 10:53:56&#x27;}, &#x27;MbrPrvs&#x27;: []}}
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">conftest/test_001_manage_member.py::Test_member_select::test_get_member_data</td>
+          <td class="col-duration">0.11</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>{&#x27;CpnID&#x27;: &#x27;0001&#x27;, &#x27;Name&#x27;: &#x27;&#x27;, &#x27;VipID&#x27;: &#x27;&#x27;, &#x27;CrdNo&#x27;: &#x27;&#x27;, &#x27;Tel&#x27;: &#x27;13220166640&#x27;, &#x27;CarID&#x27;: &#x27;&#x27;, &#x27;RgStartTime&#x27;: &#x27;&#x27;, &#x27;RgEndTime&#x27;: &#x27;&#x27;, &#x27;Stt&#x27;: &#x27;&#x27;}
+获取成功
+{&#x27;id&#x27;: 1650, &#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;usrFlg&#x27;: None, &#x27;nickName&#x27;: None, &#x27;pwd&#x27;: None, &#x27;pwdDt&#x27;: &#x27;0001-01-01 00:00:00&#x27;, &#x27;tel&#x27;: &#x27;13220166640&#x27;, &#x27;eml&#x27;: None, &#x27;name&#x27;: &#x27;FJrsbqy&#x27;, &#x27;iDntTp&#x27;: None, &#x27;iDntNmb&#x27;: None, &#x27;vipID&#x27;: &#x27;99000100000237&#x27;, &#x27;orgID&#x27;: &#x27;0000&#x27;, &#x27;vipTpID&#x27;: &#x27;01&#x27;, &#x27;strvlstt&#x27;: -1, &#x27;lastDate&#x27;: &#x27;0001-01-01 00:00:00&#x27;, &#x27;rgstApp&#x27;: &#x27;0&#x27;, &#x27;lne&#x27;: 1, &#x27;regstMonth&#x27;: 0, &#x27;rgWxMonth&#x27;: 0, &#x27;rcmd&#x27;: None, &#x27;ecrpBase&#x27;: None, &#x27;ecrp1&#x27;: None, &#x27;ecrp2&#x27;: None, &#x27;isUpToERP&#x27;: 0, &#x27;brth&#x27;: &#x27;1923-09-28 00:00:00&#x27;, &#x27;sex&#x27;: 1, &#x27;mrry&#x27;: 0, &#x27;babyStt&#x27;: &#x27;F&#x27;, &#x27;babydt&#x27;: &#x27;0001-01-01 00:00:00&#x27;, &#x27;edu&#x27;: None, &#x27;ntn&#x27;: None, &#x27;prvc&#x27;: None, &#x27;city&#x27;: None, &#x27;addr&#x27;: None, &#x27;avt&#x27;: None, &#x27;employeeNumber&#x27;: None, &#x27;regDt&#x27;: &#x27;2020-09-22 10:53:51&#x27;, &#x27;stt&#x27;: 0, &#x27;brf&#x27;: None, &#x27;uptr&#x27;: &#x27;sys&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-09-22 10:53:51&#x27;, &#x27;orgName&#x27;: &#x27;总部&#x27;, &#x27;vipTpName&#x27;: &#x27;普通卡&#x27;}
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">conftest/test_001_manage_member.py::Test_member_select::test_update_member_data</td>
+          <td class="col-duration">0.11</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>{&#x27;ID&#x27;: 1650, &#x27;CpnID&#x27;: &#x27;0001&#x27;, &#x27;UsrFlg&#x27;: None, &#x27;NickName&#x27;: None, &#x27;Pwd&#x27;: None, &#x27;PwdDt&#x27;: &#x27;0001-01-01 00:00:00&#x27;, &#x27;Tel&#x27;: &#x27;13220166640&#x27;, &#x27;Eml&#x27;: None, &#x27;Name&#x27;: &#x27;FJrsbqy&#x27;, &#x27;IDntTp&#x27;: &#x27;001&#x27;, &#x27;IDntNmb&#x27;: &#x27;513961192309287993&#x27;, &#x27;VipID&#x27;: &#x27;99000100000237&#x27;, &#x27;OrgID&#x27;: &#x27;0000&#x27;, &#x27;VipTpID&#x27;: &#x27;01&#x27;, &#x27;Strvlstt&#x27;: -1, &#x27;LastDate&#x27;: &#x27;0001-01-01 00:00:00&#x27;, &#x27;RgstApp&#x27;: &#x27;0&#x27;, &#x27;Lne&#x27;: 1, &#x27;RegstMonth&#x27;: 0, &#x27;RgWxMonth&#x27;: 0, &#x27;Rcmd&#x27;: None, &#x27;EcrpBase&#x27;: None, &#x27;Ecrp1&#x27;: None, &#x27;Ecrp2&#x27;: None, &#x27;IsUpToERP&#x27;: 0, &#x27;Brth&#x27;: &#x27;1923-09-28&#x27;, &#x27;Sex&#x27;: 1, &#x27;Mrry&#x27;: 0, &#x27;BabyStt&#x27;: &#x27;F&#x27;, &#x27;Babydt&#x27;: &#x27;0001-01-01 00:00:00&#x27;, &#x27;Edu&#x27;: None, &#x27;Ntn&#x27;: None, &#x27;Prvc&#x27;: None, &#x27;City&#x27;: None, &#x27;Addr&#x27;: None, &#x27;Avt&#x27;: None, &#x27;EmployeeNumber&#x27;: None, &#x27;RegDt&#x27;: &#x27;2020-09-22 10:53:51&#x27;, &#x27;Stt&#x27;: 0, &#x27;Brf&#x27;: None, &#x27;Uptr&#x27;: &#x27;sys&#x27;, &#x27;UptDtt&#x27;: &#x27;2020-09-22 10:53:51&#x27;, &#x27;updateProNames&#x27;: &#x27;Tel,Name,IDntTp,IDntNmb,VipTpID,Brth&#x27;}
+{&#x27;Success&#x27;: True, &#x27;Errorcode&#x27;: 0, &#x27;Message&#x27;: &#x27;修改成功&#x27;, &#x27;Data&#x27;: None}
+修改成功
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">conftest/test_001_manage_member.py::Test_select_vipdata::test_get_member_data_page</td>
+          <td class="col-duration">2.16</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>获取数据成功
+{&#x27;id&#x27;: 1650, &#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;usrFlg&#x27;: None, &#x27;nickName&#x27;: None, &#x27;pwd&#x27;: None, &#x27;pwdDt&#x27;: &#x27;0001-01-01 00:00:00&#x27;, &#x27;tel&#x27;: &#x27;13220166640&#x27;, &#x27;eml&#x27;: None, &#x27;name&#x27;: &#x27;FJrsbqy&#x27;, &#x27;iDntTp&#x27;: &#x27;001&#x27;, &#x27;iDntNmb&#x27;: &#x27;513961192309287993&#x27;, &#x27;vipID&#x27;: &#x27;99000100000237&#x27;, &#x27;orgID&#x27;: &#x27;0000&#x27;, &#x27;vipTpID&#x27;: &#x27;01&#x27;, &#x27;strvlstt&#x27;: -1, &#x27;lastDate&#x27;: &#x27;0001-01-01 00:00:00&#x27;, &#x27;rgstApp&#x27;: &#x27;0&#x27;, &#x27;lne&#x27;: 1, &#x27;regstMonth&#x27;: 0, &#x27;rgWxMonth&#x27;: 0, &#x27;rcmd&#x27;: None, &#x27;ecrpBase&#x27;: None, &#x27;ecrp1&#x27;: None, &#x27;ecrp2&#x27;: None, &#x27;isUpToERP&#x27;: 0, &#x27;brth&#x27;: &#x27;1923-09-28 00:00:00&#x27;, &#x27;sex&#x27;: 1, &#x27;mrry&#x27;: 0, &#x27;babyStt&#x27;: &#x27;F&#x27;, &#x27;babydt&#x27;: &#x27;0001-01-01 00:00:00&#x27;, &#x27;edu&#x27;: None, &#x27;ntn&#x27;: None, &#x27;prvc&#x27;: None, &#x27;city&#x27;: None, &#x27;addr&#x27;: None, &#x27;avt&#x27;: None, &#x27;employeeNumber&#x27;: None, &#x27;regDt&#x27;: &#x27;2020-09-22 10:53:51&#x27;, &#x27;stt&#x27;: 0, &#x27;brf&#x27;: None, &#x27;uptr&#x27;: &#x27;sys&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-09-22 10:53:59&#x27;, &#x27;orgName&#x27;: &#x27;总部&#x27;, &#x27;vipTpName&#x27;: &#x27;普通卡&#x27;}
+{&#x27;id&#x27;: 1626, &#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;usrFlg&#x27;: None, &#x27;nickName&#x27;: None, &#x27;pwd&#x27;: None, &#x27;pwdDt&#x27;: &#x27;0001-01-01 00:00:00&#x27;, &#x27;tel&#x27;: &#x27;13963195664&#x27;, &#x27;eml&#x27;: None, &#x27;name&#x27;: &#x27;XIonqbg&#x27;, &#x27;iDntTp&#x27;: None, &#x27;iDntNmb&#x27;: None, &#x27;vipID&#x27;: &#x27;99000100000236&#x27;, &#x27;orgID&#x27;: &#x27;0000&#x27;, &#x27;vipTpID&#x27;: &#x27;01&#x27;, &#x27;strvlstt&#x27;: -1, &#x27;lastDate&#x27;: &#x27;0001-01-01 00:00:00&#x27;, &#x27;rgstApp&#x27;: &#x27;0&#x27;, &#x27;lne&#x27;: 1, &#x27;regstMonth&#x27;: 0, &#x27;rgWxMonth&#x27;: 0, &#x27;rcmd&#x27;: None, &#x27;ecrpBase&#x27;: None, &#x27;ecrp1&#x27;: None, &#x27;ecrp2&#x27;: None, &#x27;isUpToERP&#x27;: 0, &#x27;brth&#x27;: &#x27;1970-08-14 00:00:00&#x27;, &#x27;sex&#x27;: 1, &#x27;mrry&#x27;: 0, &#x27;babyStt&#x27;: &#x27;F&#x27;, &#x27;babydt&#x27;: &#x27;0001-01-01 00:00:00&#x27;, &#x27;edu&#x27;: None, &#x27;ntn&#x27;: None, &#x27;prvc&#x27;: None, &#x27;city&#x27;: None, &#x27;addr&#x27;: None, &#x27;avt&#x27;: None, &#x27;employeeNumber&#x27;: None, &#x27;regDt&#x27;: &#x27;2020-09-15 17:25:23&#x27;, &#x27;stt&#x27;: 0, &#x27;brf&#x27;: None, &#x27;uptr&#x27;: &#x27;sys&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-09-15 17:25:23&#x27;, &#x27;orgName&#x27;: &#x27;总部&#x27;, &#x27;vipTpName&#x27;: &#x27;普通卡&#x27;}
+{&#x27;id&#x27;: 1625, &#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;usrFlg&#x27;: None, &#x27;nickName&#x27;: None, &#x27;pwd&#x27;: None, &#x27;pwdDt&#x27;: &#x27;0001-01-01 00:00:00&#x27;, &#x27;tel&#x27;: &#x27;13557854048&#x27;, &#x27;eml&#x27;: None, &#x27;name&#x27;: &#x27;ELtuymh&#x27;, &#x27;iDntTp&#x27;: None, &#x27;iDntNmb&#x27;: None, &#x27;vipID&#x27;: &#x27;99000100000235&#x27;, &#x27;orgID&#x27;: &#x27;0000&#x27;, &#x27;vipTpID&#x27;: &#x27;01&#x27;, &#x27;strvlstt&#x27;: -1, &#x27;lastDate&#x27;: &#x27;0001-01-01 00:00:00&#x27;, &#x27;rgstApp&#x27;: &#x27;0&#x27;, &#x27;lne&#x27;: 1, &#x27;regstMonth&#x27;: 0, &#x27;rgWxMonth&#x27;: 0, &#x27;rcmd&#x27;: None, &#x27;ecrpBase&#x27;: None, &#x27;ecrp1&#x27;: None, &#x27;ecrp2&#x27;: None, &#x27;isUpToERP&#x27;: 0, &#x27;brth&#x27;: &#x27;1949-01-27 00:00:00&#x27;, &#x27;sex&#x27;: 1, &#x27;mrry&#x27;: 0, &#x27;babyStt&#x27;: &#x27;F&#x27;, &#x27;babydt&#x27;: &#x27;0001-01-01 00:00:00&#x27;, &#x27;edu&#x27;: None, &#x27;ntn&#x27;: None, &#x27;prvc&#x27;: None, &#x27;city&#x27;: None, &#x27;addr&#x27;: None, &#x27;avt&#x27;: None, &#x27;employeeNumber&#x27;: None, &#x27;regDt&#x27;: &#x27;2020-09-15 17:08:09&#x27;, &#x27;stt&#x27;: 0, &#x27;brf&#x27;: None, &#x27;uptr&#x27;: &#x27;sys&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-09-15 17:08:09&#x27;, &#x27;orgName&#x27;: &#x27;总部&#x27;, &#x27;vipTpName&#x27;: &#x27;普通卡&#x27;}
+{&#x27;id&#x27;: 1543, &#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;usrFlg&#x27;: None, &#x27;nickName&#x27;: &#x27;&#x27;, &#x27;pwd&#x27;: None, &#x27;pwdDt&#x27;: &#x27;0001-01-01 00:00:00&#x27;, &#x27;tel&#x27;: &#x27;13183807891&#x27;, &#x27;eml&#x27;: &#x27;&#x27;, &#x27;name&#x27;: &#x27;wowo&#x27;, &#x27;iDntTp&#x27;: &#x27;&#x27;, &#x27;iDntNmb&#x27;: &#x27;513721199506162730&#x27;, &#x27;vipID&#x27;: &#x27;9900019000012&#x27;, &#x27;orgID&#x27;: &#x27;0000&#x27;, &#x27;vipTpID&#x27;: &#x27;01&#x27;, &#x27;strvlstt&#x27;: 0, &#x27;lastDate&#x27;: &#x27;0001-01-01 00:00:00&#x27;, &#x27;rgstApp&#x27;: &#x27;&#x27;, &#x27;lne&#x27;: 1, &#x27;regstMonth&#x27;: 0, &#x27;rgWxMonth&#x27;: 0, &#x27;rcmd&#x27;: &#x27;&#x27;, &#x27;ecrpBase&#x27;: None, &#x27;ecrp1&#x27;: None, &#x27;ecrp2&#x27;: None, &#x27;isUpToERP&#x27;: 1, &#x27;brth&#x27;: &#x27;0001-01-01 00:00:00&#x27;, &#x27;sex&#x27;: 1, &#x27;mrry&#x27;: 0, &#x27;babyStt&#x27;: &#x27;F&#x27;, &#x27;babydt&#x27;: &#x27;0001-01-01 00:00:00&#x27;, &#x27;edu&#x27;: None, &#x27;ntn&#x27;: None, &#x27;prvc&#x27;: None, &#x27;city&#x27;: None, &#x27;addr&#x27;: None, &#x27;avt&#x27;: None, &#x27;employeeNumber&#x27;: None, &#x27;regDt&#x27;: &#x27;2020-04-16 20:16:55&#x27;, &#x27;stt&#x27;: 0, &#x27;brf&#x27;: None, &#x27;uptr&#x27;: &#x27;sys&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-09-14 16:36:51&#x27;, &#x27;orgName&#x27;: &#x27;总部&#x27;, &#x27;vipTpName&#x27;: &#x27;普通卡&#x27;}
+{&#x27;id&#x27;: 1596, &#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;usrFlg&#x27;: None, &#x27;nickName&#x27;: None, &#x27;pwd&#x27;: None, &#x27;pwdDt&#x27;: &#x27;0001-01-01 00:00:00&#x27;, &#x27;tel&#x27;: &#x27;13208019225&#x27;, &#x27;eml&#x27;: None, &#x27;name&#x27;: &#x27;IBlajaa&#x27;, &#x27;iDntTp&#x27;: &#x27;001&#x27;, &#x27;iDntNmb&#x27;: &#x27;516018198804104843&#x27;, &#x27;vipID&#x27;: &#x27;99000100000234&#x27;, &#x27;orgID&#x27;: &#x27;0000&#x27;, &#x27;vipTpID&#x27;: &#x27;01&#x27;, &#x27;strvlstt&#x27;: -1, &#x27;lastDate&#x27;: &#x27;0001-01-01 00:00:00&#x27;, &#x27;rgstApp&#x27;: &#x27;0&#x27;, &#x27;lne&#x27;: 1, &#x27;regstMonth&#x27;: 0, &#x27;rgWxMonth&#x27;: 0, &#x27;rcmd&#x27;: None, &#x27;ecrpBase&#x27;: None, &#x27;ecrp1&#x27;: None, &#x27;ecrp2&#x27;: None, &#x27;isUpToERP&#x27;: 0, &#x27;brth&#x27;: &#x27;1988-04-10 00:00:00&#x27;, &#x27;sex&#x27;: 1, &#x27;mrry&#x27;: 0, &#x27;babyStt&#x27;: &#x27;F&#x27;, &#x27;babydt&#x27;: &#x27;0001-01-01 00:00:00&#x27;, &#x27;edu&#x27;: None, &#x27;ntn&#x27;: None, &#x27;prvc&#x27;: None, &#x27;city&#x27;: None, &#x27;addr&#x27;: None, &#x27;avt&#x27;: None, &#x27;employeeNumber&#x27;: None, &#x27;regDt&#x27;: &#x27;2020-09-04 09:41:25&#x27;, &#x27;stt&#x27;: 0, &#x27;brf&#x27;: None, &#x27;uptr&#x27;: &#x27;sys&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-09-04 09:41:41&#x27;, &#x27;orgName&#x27;: &#x27;总部&#x27;, &#x27;vipTpName&#x27;: &#x27;普通卡&#x27;}
+{&#x27;id&#x27;: 1586, &#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;usrFlg&#x27;: None, &#x27;nickName&#x27;: None, &#x27;pwd&#x27;: None, &#x27;pwdDt&#x27;: &#x27;0001-01-01 00:00:00&#x27;, &#x27;tel&#x27;: &#x27;13750953944&#x27;, &#x27;eml&#x27;: None, &#x27;name&#x27;: &#x27;TVqimrl&#x27;, &#x27;iDntTp&#x27;: &#x27;001&#x27;, &#x27;iDntNmb&#x27;: &#x27;511346192303117182&#x27;, &#x27;vipID&#x27;: &#x27;99000100000233&#x27;, &#x27;orgID&#x27;: &#x27;0000&#x27;, &#x27;vipTpID&#x27;: &#x27;01&#x27;, &#x27;strvlstt&#x27;: -1, &#x27;lastDate&#x27;: &#x27;0001-01-01 00:00:00&#x27;, &#x27;rgstApp&#x27;: &#x27;0&#x27;, &#x27;lne&#x27;: 1, &#x27;regstMonth&#x27;: 0, &#x27;rgWxMonth&#x27;: 0, &#x27;rcmd&#x27;: None, &#x27;ecrpBase&#x27;: None, &#x27;ecrp1&#x27;: None, &#x27;ecrp2&#x27;: None, &#x27;isUpToERP&#x27;: 0, &#x27;brth&#x27;: &#x27;1923-03-11 00:00:00&#x27;, &#x27;sex&#x27;: 1, &#x27;mrry&#x27;: 0, &#x27;babyStt&#x27;: &#x27;F&#x27;, &#x27;babydt&#x27;: &#x27;0001-01-01 00:00:00&#x27;, &#x27;edu&#x27;: None, &#x27;ntn&#x27;: None, &#x27;prvc&#x27;: None, &#x27;city&#x27;: None, &#x27;addr&#x27;: None, &#x27;avt&#x27;: None, &#x27;employeeNumber&#x27;: None, &#x27;regDt&#x27;: &#x27;2020-08-31 15:34:04&#x27;, &#x27;stt&#x27;: 0, &#x27;brf&#x27;: None, &#x27;uptr&#x27;: &#x27;sys&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-09-04 09:37:25&#x27;, &#x27;orgName&#x27;: &#x27;总部&#x27;, &#x27;vipTpName&#x27;: &#x27;普通卡&#x27;}
+{&#x27;id&#x27;: 1564, &#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;usrFlg&#x27;: None, &#x27;nickName&#x27;: None, &#x27;pwd&#x27;: None, &#x27;pwdDt&#x27;: &#x27;0001-01-01 00:00:00&#x27;, &#x27;tel&#x27;: &#x27;13778212986&#x27;, &#x27;eml&#x27;: None, &#x27;name&#x27;: &#x27;ZCuunjc&#x27;, &#x27;iDntTp&#x27;: &#x27;001&#x27;, &#x27;iDntNmb&#x27;: &#x27;512938194907226335&#x27;, &#x27;vipID&#x27;: &#x27;99000100000232&#x27;, &#x27;orgID&#x27;: &#x27;0000&#x27;, &#x27;vipTpID&#x27;: &#x27;01&#x27;, &#x27;strvlstt&#x27;: -1, &#x27;lastDate&#x27;: &#x27;0001-01-01 00:00:00&#x27;, &#x27;rgstApp&#x27;: &#x27;0&#x27;, &#x27;lne&#x27;: 1, &#x27;regstMonth&#x27;: 0, &#x27;rgWxMonth&#x27;: 0, &#x27;rcmd&#x27;: None, &#x27;ecrpBase&#x27;: None, &#x27;ecrp1&#x27;: None, &#x27;ecrp2&#x27;: None, &#x27;isUpToERP&#x27;: 0, &#x27;brth&#x27;: &#x27;1949-07-22 00:00:00&#x27;, &#x27;sex&#x27;: 1, &#x27;mrry&#x27;: 0, &#x27;babyStt&#x27;: &#x27;F&#x27;, &#x27;babydt&#x27;: &#x27;0001-01-01 00:00:00&#x27;, &#x27;edu&#x27;: None, &#x27;ntn&#x27;: None, &#x27;prvc&#x27;: None, &#x27;city&#x27;: None, &#x27;addr&#x27;: None, &#x27;avt&#x27;: None, &#x27;employeeNumber&#x27;: None, &#x27;regDt&#x27;: &#x27;2020-08-26 10:54:55&#x27;, &#x27;stt&#x27;: 0, &#x27;brf&#x27;: None, &#x27;uptr&#x27;: &#x27;sys&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-08-26 10:55:02&#x27;, &#x27;orgName&#x27;: &#x27;总部&#x27;, &#x27;vipTpName&#x27;: &#x27;普通卡&#x27;}
+{&#x27;id&#x27;: 1563, &#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;usrFlg&#x27;: None, &#x27;nickName&#x27;: None, &#x27;pwd&#x27;: None, &#x27;pwdDt&#x27;: &#x27;0001-01-01 00:00:00&#x27;, &#x27;tel&#x27;: &#x27;13668956045&#x27;, &#x27;eml&#x27;: None, &#x27;name&#x27;: &#x27;AQcyojy&#x27;, &#x27;iDntTp&#x27;: &#x27;001&#x27;, &#x27;iDntNmb&#x27;: &#x27;513034194109139808&#x27;, &#x27;vipID&#x27;: &#x27;99000100000231&#x27;, &#x27;orgID&#x27;: &#x27;0000&#x27;, &#x27;vipTpID&#x27;: &#x27;01&#x27;, &#x27;strvlstt&#x27;: -1, &#x27;lastDate&#x27;: &#x27;0001-01-01 00:00:00&#x27;, &#x27;rgstApp&#x27;: &#x27;0&#x27;, &#x27;lne&#x27;: 1, &#x27;regstMonth&#x27;: 0, &#x27;rgWxMonth&#x27;: 0, &#x27;rcmd&#x27;: None, &#x27;ecrpBase&#x27;: None, &#x27;ecrp1&#x27;: None, &#x27;ecrp2&#x27;: None, &#x27;isUpToERP&#x27;: 0, &#x27;brth&#x27;: &#x27;1941-09-13 00:00:00&#x27;, &#x27;sex&#x27;: 1, &#x27;mrry&#x27;: 0, &#x27;babyStt&#x27;: &#x27;F&#x27;, &#x27;babydt&#x27;: &#x27;0001-01-01 00:00:00&#x27;, &#x27;edu&#x27;: None, &#x27;ntn&#x27;: None, &#x27;prvc&#x27;: None, &#x27;city&#x27;: None, &#x27;addr&#x27;: None, &#x27;avt&#x27;: None, &#x27;employeeNumber&#x27;: None, &#x27;regDt&#x27;: &#x27;2020-08-26 10:38:57&#x27;, &#x27;stt&#x27;: 0, &#x27;brf&#x27;: None, &#x27;uptr&#x27;: &#x27;sys&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-08-26 10:39:07&#x27;, &#x27;orgName&#x27;: &#x27;总部&#x27;, &#x27;vipTpName&#x27;: &#x27;普通卡&#x27;}
+{&#x27;id&#x27;: 1561, &#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;usrFlg&#x27;: None, &#x27;nickName&#x27;: None, &#x27;pwd&#x27;: None, &#x27;pwdDt&#x27;: &#x27;0001-01-01 00:00:00&#x27;, &#x27;tel&#x27;: &#x27;13497007305&#x27;, &#x27;eml&#x27;: None, &#x27;name&#x27;: &#x27;OGgjamv&#x27;, &#x27;iDntTp&#x27;: &#x27;001&#x27;, &#x27;iDntNmb&#x27;: &#x27;512268192508147241&#x27;, &#x27;vipID&#x27;: &#x27;99000100000230&#x27;, &#x27;orgID&#x27;: &#x27;0000&#x27;, &#x27;vipTpID&#x27;: &#x27;01&#x27;, &#x27;strvlstt&#x27;: -1, &#x27;lastDate&#x27;: &#x27;0001-01-01 00:00:00&#x27;, &#x27;rgstApp&#x27;: &#x27;0&#x27;, &#x27;lne&#x27;: 1, &#x27;regstMonth&#x27;: 0, &#x27;rgWxMonth&#x27;: 0, &#x27;rcmd&#x27;: None, &#x27;ecrpBase&#x27;: None, &#x27;ecrp1&#x27;: None, &#x27;ecrp2&#x27;: None, &#x27;isUpToERP&#x27;: 0, &#x27;brth&#x27;: &#x27;1925-08-14 00:00:00&#x27;, &#x27;sex&#x27;: 1, &#x27;mrry&#x27;: 0, &#x27;babyStt&#x27;: &#x27;F&#x27;, &#x27;babydt&#x27;: &#x27;0001-01-01 00:00:00&#x27;, &#x27;edu&#x27;: None, &#x27;ntn&#x27;: None, &#x27;prvc&#x27;: None, &#x27;city&#x27;: None, &#x27;addr&#x27;: None, &#x27;avt&#x27;: None, &#x27;employeeNumber&#x27;: None, &#x27;regDt&#x27;: &#x27;2020-08-26 10:18:02&#x27;, &#x27;stt&#x27;: 0, &#x27;brf&#x27;: None, &#x27;uptr&#x27;: &#x27;sys&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-08-26 10:18:08&#x27;, &#x27;orgName&#x27;: &#x27;总部&#x27;, &#x27;vipTpName&#x27;: &#x27;普通卡&#x27;}
+{&#x27;id&#x27;: 1560, &#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;usrFlg&#x27;: None, &#x27;nickName&#x27;: None, &#x27;pwd&#x27;: None, &#x27;pwdDt&#x27;: &#x27;0001-01-01 00:00:00&#x27;, &#x27;tel&#x27;: &#x27;13570092135&#x27;, &#x27;eml&#x27;: None, &#x27;name&#x27;: &#x27;OSgxagj&#x27;, &#x27;iDntTp&#x27;: &#x27;001&#x27;, &#x27;iDntNmb&#x27;: &#x27;517624198209265759&#x27;, &#x27;vipID&#x27;: &#x27;99000100000229&#x27;, &#x27;orgID&#x27;: &#x27;0000&#x27;, &#x27;vipTpID&#x27;: &#x27;01&#x27;, &#x27;strvlstt&#x27;: -1, &#x27;lastDate&#x27;: &#x27;0001-01-01 00:00:00&#x27;, &#x27;rgstApp&#x27;: &#x27;0&#x27;, &#x27;lne&#x27;: 1, &#x27;regstMonth&#x27;: 0, &#x27;rgWxMonth&#x27;: 0, &#x27;rcmd&#x27;: None, &#x27;ecrpBase&#x27;: None, &#x27;ecrp1&#x27;: None, &#x27;ecrp2&#x27;: None, &#x27;isUpToERP&#x27;: 0, &#x27;brth&#x27;: &#x27;1982-09-26 00:00:00&#x27;, &#x27;sex&#x27;: 1, &#x27;mrry&#x27;: 0, &#x27;babyStt&#x27;: &#x27;F&#x27;, &#x27;babydt&#x27;: &#x27;0001-01-01 00:00:00&#x27;, &#x27;edu&#x27;: None, &#x27;ntn&#x27;: None, &#x27;prvc&#x27;: None, &#x27;city&#x27;: None, &#x27;addr&#x27;: None, &#x27;avt&#x27;: None, &#x27;employeeNumber&#x27;: None, &#x27;regDt&#x27;: &#x27;2020-08-26 10:14:41&#x27;, &#x27;stt&#x27;: 0, &#x27;brf&#x27;: None, &#x27;uptr&#x27;: &#x27;sys&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-08-26 10:17:36&#x27;, &#x27;orgName&#x27;: &#x27;总部&#x27;, &#x27;vipTpName&#x27;: &#x27;普通卡&#x27;}
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">conftest/test_001_manage_member.py::Test_select_vipdata::test_get_member_data_name</td>
+          <td class="col-duration">2.17</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>获取数据成功
+{&#x27;id&#x27;: 1650, &#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;usrFlg&#x27;: None, &#x27;nickName&#x27;: None, &#x27;pwd&#x27;: None, &#x27;pwdDt&#x27;: &#x27;0001-01-01 00:00:00&#x27;, &#x27;tel&#x27;: &#x27;13220166640&#x27;, &#x27;eml&#x27;: None, &#x27;name&#x27;: &#x27;FJrsbqy&#x27;, &#x27;iDntTp&#x27;: &#x27;001&#x27;, &#x27;iDntNmb&#x27;: &#x27;513961192309287993&#x27;, &#x27;vipID&#x27;: &#x27;99000100000237&#x27;, &#x27;orgID&#x27;: &#x27;0000&#x27;, &#x27;vipTpID&#x27;: &#x27;01&#x27;, &#x27;strvlstt&#x27;: -1, &#x27;lastDate&#x27;: &#x27;0001-01-01 00:00:00&#x27;, &#x27;rgstApp&#x27;: &#x27;0&#x27;, &#x27;lne&#x27;: 1, &#x27;regstMonth&#x27;: 0, &#x27;rgWxMonth&#x27;: 0, &#x27;rcmd&#x27;: None, &#x27;ecrpBase&#x27;: None, &#x27;ecrp1&#x27;: None, &#x27;ecrp2&#x27;: None, &#x27;isUpToERP&#x27;: 0, &#x27;brth&#x27;: &#x27;1923-09-28 00:00:00&#x27;, &#x27;sex&#x27;: 1, &#x27;mrry&#x27;: 0, &#x27;babyStt&#x27;: &#x27;F&#x27;, &#x27;babydt&#x27;: &#x27;0001-01-01 00:00:00&#x27;, &#x27;edu&#x27;: None, &#x27;ntn&#x27;: None, &#x27;prvc&#x27;: None, &#x27;city&#x27;: None, &#x27;addr&#x27;: None, &#x27;avt&#x27;: None, &#x27;employeeNumber&#x27;: None, &#x27;regDt&#x27;: &#x27;2020-09-22 10:53:51&#x27;, &#x27;stt&#x27;: 0, &#x27;brf&#x27;: None, &#x27;uptr&#x27;: &#x27;sys&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-09-22 10:53:59&#x27;, &#x27;orgName&#x27;: &#x27;总部&#x27;, &#x27;vipTpName&#x27;: &#x27;普通卡&#x27;}
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">conftest/test_001_manage_member.py::Test_select_vipdata::test_get_member_data_vipid</td>
+          <td class="col-duration">0.09</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>获取数据成功
+{&#x27;id&#x27;: 1650, &#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;usrFlg&#x27;: None, &#x27;nickName&#x27;: None, &#x27;pwd&#x27;: None, &#x27;pwdDt&#x27;: &#x27;0001-01-01 00:00:00&#x27;, &#x27;tel&#x27;: &#x27;13220166640&#x27;, &#x27;eml&#x27;: None, &#x27;name&#x27;: &#x27;FJrsbqy&#x27;, &#x27;iDntTp&#x27;: &#x27;001&#x27;, &#x27;iDntNmb&#x27;: &#x27;513961192309287993&#x27;, &#x27;vipID&#x27;: &#x27;99000100000237&#x27;, &#x27;orgID&#x27;: &#x27;0000&#x27;, &#x27;vipTpID&#x27;: &#x27;01&#x27;, &#x27;strvlstt&#x27;: -1, &#x27;lastDate&#x27;: &#x27;0001-01-01 00:00:00&#x27;, &#x27;rgstApp&#x27;: &#x27;0&#x27;, &#x27;lne&#x27;: 1, &#x27;regstMonth&#x27;: 0, &#x27;rgWxMonth&#x27;: 0, &#x27;rcmd&#x27;: None, &#x27;ecrpBase&#x27;: None, &#x27;ecrp1&#x27;: None, &#x27;ecrp2&#x27;: None, &#x27;isUpToERP&#x27;: 0, &#x27;brth&#x27;: &#x27;1923-09-28 00:00:00&#x27;, &#x27;sex&#x27;: 1, &#x27;mrry&#x27;: 0, &#x27;babyStt&#x27;: &#x27;F&#x27;, &#x27;babydt&#x27;: &#x27;0001-01-01 00:00:00&#x27;, &#x27;edu&#x27;: None, &#x27;ntn&#x27;: None, &#x27;prvc&#x27;: None, &#x27;city&#x27;: None, &#x27;addr&#x27;: None, &#x27;avt&#x27;: None, &#x27;employeeNumber&#x27;: None, &#x27;regDt&#x27;: &#x27;2020-09-22 10:53:51&#x27;, &#x27;stt&#x27;: 0, &#x27;brf&#x27;: None, &#x27;uptr&#x27;: &#x27;sys&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-09-22 10:53:59&#x27;, &#x27;orgName&#x27;: &#x27;总部&#x27;, &#x27;vipTpName&#x27;: &#x27;普通卡&#x27;}
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">conftest/test_001_manage_member.py::Test_get_vipcard::test_get_vipcard_page</td>
+          <td class="col-duration">2.16</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>获取数据成功
+{&#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;crdID&#x27;: &#x27;199000100000237934&#x27;, &#x27;crdNo&#x27;: &#x27;99000100000237&#x27;, &#x27;crdTpid&#x27;: &#x27;000&#x27;, &#x27;crdPwd&#x27;: None, &#x27;gstID&#x27;: 1650, &#x27;vipID&#x27;: &#x27;99000100000237&#x27;, &#x27;orgID&#x27;: &#x27;0000&#x27;, &#x27;useOrgID&#x27;: &#x27;0000&#x27;, &#x27;maCrd&#x27;: &#x27;T&#x27;, &#x27;stt&#x27;: 0, &#x27;opnDt&#x27;: &#x27;2020-09-22 10:53:51&#x27;, &#x27;eddt&#x27;: &#x27;9999-12-31 00:00:00&#x27;, &#x27;name&#x27;: &#x27;FJrsbqy&#x27;, &#x27;gnd&#x27;: 1, &#x27;iDntTp&#x27;: &#x27;001&#x27;, &#x27;iDntNmb&#x27;: &#x27;513961192309287993&#x27;, &#x27;brthdy&#x27;: &#x27;1923-09-28 00:00:00&#x27;, &#x27;mbl&#x27;: &#x27;13220166640&#x27;, &#x27;fmlyRltn&#x27;: None, &#x27;impCRM&#x27;: 1, &#x27;ecrpBase&#x27;: None, &#x27;uptDtt&#x27;: &#x27;2020-09-22 10:53:59&#x27;}
+{&#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;crdID&#x27;: &#x27;199000100000236795&#x27;, &#x27;crdNo&#x27;: &#x27;99000100000236&#x27;, &#x27;crdTpid&#x27;: &#x27;000&#x27;, &#x27;crdPwd&#x27;: None, &#x27;gstID&#x27;: 1626, &#x27;vipID&#x27;: &#x27;99000100000236&#x27;, &#x27;orgID&#x27;: &#x27;0000&#x27;, &#x27;useOrgID&#x27;: &#x27;0000&#x27;, &#x27;maCrd&#x27;: &#x27;T&#x27;, &#x27;stt&#x27;: 0, &#x27;opnDt&#x27;: &#x27;2020-09-15 17:25:23&#x27;, &#x27;eddt&#x27;: &#x27;9999-12-31 00:00:00&#x27;, &#x27;name&#x27;: &#x27;XIonqbg&#x27;, &#x27;gnd&#x27;: 1, &#x27;iDntTp&#x27;: None, &#x27;iDntNmb&#x27;: None, &#x27;brthdy&#x27;: None, &#x27;mbl&#x27;: &#x27;13963195664&#x27;, &#x27;fmlyRltn&#x27;: None, &#x27;impCRM&#x27;: 1, &#x27;ecrpBase&#x27;: None, &#x27;uptDtt&#x27;: &#x27;2020-09-15 17:25:23&#x27;}
+{&#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;crdID&#x27;: &#x27;199000100000235662&#x27;, &#x27;crdNo&#x27;: &#x27;99000100000235&#x27;, &#x27;crdTpid&#x27;: &#x27;000&#x27;, &#x27;crdPwd&#x27;: None, &#x27;gstID&#x27;: 1625, &#x27;vipID&#x27;: &#x27;99000100000235&#x27;, &#x27;orgID&#x27;: &#x27;0000&#x27;, &#x27;useOrgID&#x27;: &#x27;0000&#x27;, &#x27;maCrd&#x27;: &#x27;T&#x27;, &#x27;stt&#x27;: 0, &#x27;opnDt&#x27;: &#x27;2020-09-15 17:08:09&#x27;, &#x27;eddt&#x27;: &#x27;9999-12-31 00:00:00&#x27;, &#x27;name&#x27;: &#x27;ELtuymh&#x27;, &#x27;gnd&#x27;: 1, &#x27;iDntTp&#x27;: None, &#x27;iDntNmb&#x27;: None, &#x27;brthdy&#x27;: None, &#x27;mbl&#x27;: &#x27;13557854048&#x27;, &#x27;fmlyRltn&#x27;: None, &#x27;impCRM&#x27;: 1, &#x27;ecrpBase&#x27;: None, &#x27;uptDtt&#x27;: &#x27;2020-09-15 17:08:09&#x27;}
+{&#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;crdID&#x27;: &#x27;9900019000012&#x27;, &#x27;crdNo&#x27;: &#x27;9900019000012&#x27;, &#x27;crdTpid&#x27;: &#x27;000&#x27;, &#x27;crdPwd&#x27;: None, &#x27;gstID&#x27;: 1543, &#x27;vipID&#x27;: &#x27;9900019000012&#x27;, &#x27;orgID&#x27;: &#x27;0000&#x27;, &#x27;useOrgID&#x27;: &#x27;0000&#x27;, &#x27;maCrd&#x27;: &#x27;T&#x27;, &#x27;stt&#x27;: 0, &#x27;opnDt&#x27;: &#x27;2020-04-16 20:16:55&#x27;, &#x27;eddt&#x27;: &#x27;2020-04-16 20:16:55&#x27;, &#x27;name&#x27;: &#x27;wowo&#x27;, &#x27;gnd&#x27;: 1, &#x27;iDntTp&#x27;: &#x27;&#x27;, &#x27;iDntNmb&#x27;: &#x27;513721199506162730&#x27;, &#x27;brthdy&#x27;: &#x27;0001-01-01 00:00:00&#x27;, &#x27;mbl&#x27;: &#x27;13183807891&#x27;, &#x27;fmlyRltn&#x27;: None, &#x27;impCRM&#x27;: 1, &#x27;ecrpBase&#x27;: None, &#x27;uptDtt&#x27;: &#x27;2020-09-14 16:36:51&#x27;}
+{&#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;crdID&#x27;: &#x27;199000100000234539&#x27;, &#x27;crdNo&#x27;: &#x27;99000100000234&#x27;, &#x27;crdTpid&#x27;: &#x27;000&#x27;, &#x27;crdPwd&#x27;: None, &#x27;gstID&#x27;: 1596, &#x27;vipID&#x27;: &#x27;99000100000234&#x27;, &#x27;orgID&#x27;: &#x27;0000&#x27;, &#x27;useOrgID&#x27;: &#x27;0000&#x27;, &#x27;maCrd&#x27;: &#x27;T&#x27;, &#x27;stt&#x27;: 0, &#x27;opnDt&#x27;: &#x27;2020-09-04 09:41:25&#x27;, &#x27;eddt&#x27;: &#x27;9999-12-31 00:00:00&#x27;, &#x27;name&#x27;: &#x27;IBlajaa&#x27;, &#x27;gnd&#x27;: 1, &#x27;iDntTp&#x27;: &#x27;001&#x27;, &#x27;iDntNmb&#x27;: &#x27;516018198804104843&#x27;, &#x27;brthdy&#x27;: &#x27;1988-04-10 00:00:00&#x27;, &#x27;mbl&#x27;: &#x27;13208019225&#x27;, &#x27;fmlyRltn&#x27;: None, &#x27;impCRM&#x27;: 1, &#x27;ecrpBase&#x27;: None, &#x27;uptDtt&#x27;: &#x27;2020-09-04 09:41:41&#x27;}
+{&#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;crdID&#x27;: &#x27;199000100000233390&#x27;, &#x27;crdNo&#x27;: &#x27;99000100000233&#x27;, &#x27;crdTpid&#x27;: &#x27;000&#x27;, &#x27;crdPwd&#x27;: None, &#x27;gstID&#x27;: 1586, &#x27;vipID&#x27;: &#x27;99000100000233&#x27;, &#x27;orgID&#x27;: &#x27;0000&#x27;, &#x27;useOrgID&#x27;: &#x27;0000&#x27;, &#x27;maCrd&#x27;: &#x27;T&#x27;, &#x27;stt&#x27;: 0, &#x27;opnDt&#x27;: &#x27;2020-08-31 15:34:04&#x27;, &#x27;eddt&#x27;: &#x27;9999-12-31 00:00:00&#x27;, &#x27;name&#x27;: &#x27;TVqimrl&#x27;, &#x27;gnd&#x27;: 1, &#x27;iDntTp&#x27;: &#x27;001&#x27;, &#x27;iDntNmb&#x27;: &#x27;511346192303117182&#x27;, &#x27;brthdy&#x27;: &#x27;1923-03-11 00:00:00&#x27;, &#x27;mbl&#x27;: &#x27;13750953944&#x27;, &#x27;fmlyRltn&#x27;: None, &#x27;impCRM&#x27;: 1, &#x27;ecrpBase&#x27;: None, &#x27;uptDtt&#x27;: &#x27;2020-09-04 09:37:25&#x27;}
+{&#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;crdID&#x27;: &#x27;199000100000232267&#x27;, &#x27;crdNo&#x27;: &#x27;99000100000232&#x27;, &#x27;crdTpid&#x27;: &#x27;000&#x27;, &#x27;crdPwd&#x27;: None, &#x27;gstID&#x27;: 1564, &#x27;vipID&#x27;: &#x27;99000100000232&#x27;, &#x27;orgID&#x27;: &#x27;0000&#x27;, &#x27;useOrgID&#x27;: &#x27;0000&#x27;, &#x27;maCrd&#x27;: &#x27;T&#x27;, &#x27;stt&#x27;: 0, &#x27;opnDt&#x27;: &#x27;2020-08-26 10:54:55&#x27;, &#x27;eddt&#x27;: &#x27;9999-12-31 00:00:00&#x27;, &#x27;name&#x27;: &#x27;ZCuunjc&#x27;, &#x27;gnd&#x27;: 1, &#x27;iDntTp&#x27;: &#x27;001&#x27;, &#x27;iDntNmb&#x27;: &#x27;512938194907226335&#x27;, &#x27;brthdy&#x27;: &#x27;1949-07-22 00:00:00&#x27;, &#x27;mbl&#x27;: &#x27;13778212986&#x27;, &#x27;fmlyRltn&#x27;: None, &#x27;impCRM&#x27;: 1, &#x27;ecrpBase&#x27;: None, &#x27;uptDtt&#x27;: &#x27;2020-08-26 10:55:02&#x27;}
+{&#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;crdID&#x27;: &#x27;199000100000231134&#x27;, &#x27;crdNo&#x27;: &#x27;99000100000231&#x27;, &#x27;crdTpid&#x27;: &#x27;000&#x27;, &#x27;crdPwd&#x27;: None, &#x27;gstID&#x27;: 1563, &#x27;vipID&#x27;: &#x27;99000100000231&#x27;, &#x27;orgID&#x27;: &#x27;0000&#x27;, &#x27;useOrgID&#x27;: &#x27;0000&#x27;, &#x27;maCrd&#x27;: &#x27;T&#x27;, &#x27;stt&#x27;: 0, &#x27;opnDt&#x27;: &#x27;2020-08-26 10:38:57&#x27;, &#x27;eddt&#x27;: &#x27;9999-12-31 00:00:00&#x27;, &#x27;name&#x27;: &#x27;AQcyojy&#x27;, &#x27;gnd&#x27;: 1, &#x27;iDntTp&#x27;: &#x27;001&#x27;, &#x27;iDntNmb&#x27;: &#x27;513034194109139808&#x27;, &#x27;brthdy&#x27;: &#x27;1941-09-13 00:00:00&#x27;, &#x27;mbl&#x27;: &#x27;13668956045&#x27;, &#x27;fmlyRltn&#x27;: None, &#x27;impCRM&#x27;: 1, &#x27;ecrpBase&#x27;: None, &#x27;uptDtt&#x27;: &#x27;2020-08-26 10:39:07&#x27;}
+{&#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;crdID&#x27;: &#x27;199000100000230117&#x27;, &#x27;crdNo&#x27;: &#x27;99000100000230&#x27;, &#x27;crdTpid&#x27;: &#x27;000&#x27;, &#x27;crdPwd&#x27;: None, &#x27;gstID&#x27;: 1561, &#x27;vipID&#x27;: &#x27;99000100000230&#x27;, &#x27;orgID&#x27;: &#x27;0000&#x27;, &#x27;useOrgID&#x27;: &#x27;0000&#x27;, &#x27;maCrd&#x27;: &#x27;T&#x27;, &#x27;stt&#x27;: 0, &#x27;opnDt&#x27;: &#x27;2020-08-26 10:18:02&#x27;, &#x27;eddt&#x27;: &#x27;9999-12-31 00:00:00&#x27;, &#x27;name&#x27;: &#x27;OGgjamv&#x27;, &#x27;gnd&#x27;: 1, &#x27;iDntTp&#x27;: &#x27;001&#x27;, &#x27;iDntNmb&#x27;: &#x27;512268192508147241&#x27;, &#x27;brthdy&#x27;: &#x27;1925-08-14 00:00:00&#x27;, &#x27;mbl&#x27;: &#x27;13497007305&#x27;, &#x27;fmlyRltn&#x27;: None, &#x27;impCRM&#x27;: 1, &#x27;ecrpBase&#x27;: None, &#x27;uptDtt&#x27;: &#x27;2020-08-26 10:18:08&#x27;}
+{&#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;crdID&#x27;: &#x27;199000100000229111&#x27;, &#x27;crdNo&#x27;: &#x27;99000100000229&#x27;, &#x27;crdTpid&#x27;: &#x27;000&#x27;, &#x27;crdPwd&#x27;: None, &#x27;gstID&#x27;: 1560, &#x27;vipID&#x27;: &#x27;99000100000229&#x27;, &#x27;orgID&#x27;: &#x27;0000&#x27;, &#x27;useOrgID&#x27;: &#x27;0000&#x27;, &#x27;maCrd&#x27;: &#x27;T&#x27;, &#x27;stt&#x27;: 0, &#x27;opnDt&#x27;: &#x27;2020-08-26 10:14:41&#x27;, &#x27;eddt&#x27;: &#x27;9999-12-31 00:00:00&#x27;, &#x27;name&#x27;: &#x27;OSgxagj&#x27;, &#x27;gnd&#x27;: 1, &#x27;iDntTp&#x27;: &#x27;001&#x27;, &#x27;iDntNmb&#x27;: &#x27;517624198209265759&#x27;, &#x27;brthdy&#x27;: &#x27;1982-09-26 00:00:00&#x27;, &#x27;mbl&#x27;: &#x27;13570092135&#x27;, &#x27;fmlyRltn&#x27;: None, &#x27;impCRM&#x27;: 1, &#x27;ecrpBase&#x27;: None, &#x27;uptDtt&#x27;: &#x27;2020-08-26 10:17:36&#x27;}
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">conftest/test_001_manage_member.py::Test_get_vipcard::test_get_vipcard_cardid</td>
+          <td class="col-duration">2.15</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>获取数据成功
+{&#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;crdID&#x27;: &#x27;199000100000237934&#x27;, &#x27;crdNo&#x27;: &#x27;99000100000237&#x27;, &#x27;crdTpid&#x27;: &#x27;000&#x27;, &#x27;crdPwd&#x27;: None, &#x27;gstID&#x27;: 1650, &#x27;vipID&#x27;: &#x27;99000100000237&#x27;, &#x27;orgID&#x27;: &#x27;0000&#x27;, &#x27;useOrgID&#x27;: &#x27;0000&#x27;, &#x27;maCrd&#x27;: &#x27;T&#x27;, &#x27;stt&#x27;: 0, &#x27;opnDt&#x27;: &#x27;2020-09-22 10:53:51&#x27;, &#x27;eddt&#x27;: &#x27;9999-12-31 00:00:00&#x27;, &#x27;name&#x27;: &#x27;FJrsbqy&#x27;, &#x27;gnd&#x27;: 1, &#x27;iDntTp&#x27;: &#x27;001&#x27;, &#x27;iDntNmb&#x27;: &#x27;513961192309287993&#x27;, &#x27;brthdy&#x27;: &#x27;1923-09-28 00:00:00&#x27;, &#x27;mbl&#x27;: &#x27;13220166640&#x27;, &#x27;fmlyRltn&#x27;: None, &#x27;impCRM&#x27;: 1, &#x27;ecrpBase&#x27;: None, &#x27;uptDtt&#x27;: &#x27;2020-09-22 10:53:59&#x27;}
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">conftest/test_001_manage_member.py::Test_get_vipcard::test_get_vipcard_gstid</td>
+          <td class="col-duration">0.10</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>获取数据成功
+{&#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;crdID&#x27;: &#x27;199000100000237934&#x27;, &#x27;crdNo&#x27;: &#x27;99000100000237&#x27;, &#x27;crdTpid&#x27;: &#x27;000&#x27;, &#x27;crdPwd&#x27;: None, &#x27;gstID&#x27;: 1650, &#x27;vipID&#x27;: &#x27;99000100000237&#x27;, &#x27;orgID&#x27;: &#x27;0000&#x27;, &#x27;useOrgID&#x27;: &#x27;0000&#x27;, &#x27;maCrd&#x27;: &#x27;T&#x27;, &#x27;stt&#x27;: 0, &#x27;opnDt&#x27;: &#x27;2020-09-22 10:53:51&#x27;, &#x27;eddt&#x27;: &#x27;9999-12-31 00:00:00&#x27;, &#x27;name&#x27;: &#x27;FJrsbqy&#x27;, &#x27;gnd&#x27;: 1, &#x27;iDntTp&#x27;: &#x27;001&#x27;, &#x27;iDntNmb&#x27;: &#x27;513961192309287993&#x27;, &#x27;brthdy&#x27;: &#x27;1923-09-28 00:00:00&#x27;, &#x27;mbl&#x27;: &#x27;13220166640&#x27;, &#x27;fmlyRltn&#x27;: None, &#x27;impCRM&#x27;: 1, &#x27;ecrpBase&#x27;: None, &#x27;uptDtt&#x27;: &#x27;2020-09-22 10:53:59&#x27;}
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">conftest/test_001_manage_member.py::Test_get_vipcard::test_get_vipcard_cardface</td>
+          <td class="col-duration">0.09</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>获取数据成功
+{&#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;crdID&#x27;: &#x27;199000100000237934&#x27;, &#x27;crdNo&#x27;: &#x27;99000100000237&#x27;, &#x27;crdTpid&#x27;: &#x27;000&#x27;, &#x27;crdPwd&#x27;: None, &#x27;gstID&#x27;: 1650, &#x27;vipID&#x27;: &#x27;99000100000237&#x27;, &#x27;orgID&#x27;: &#x27;0000&#x27;, &#x27;useOrgID&#x27;: &#x27;0000&#x27;, &#x27;maCrd&#x27;: &#x27;T&#x27;, &#x27;stt&#x27;: 0, &#x27;opnDt&#x27;: &#x27;2020-09-22 10:53:51&#x27;, &#x27;eddt&#x27;: &#x27;9999-12-31 00:00:00&#x27;, &#x27;name&#x27;: &#x27;FJrsbqy&#x27;, &#x27;gnd&#x27;: 1, &#x27;iDntTp&#x27;: &#x27;001&#x27;, &#x27;iDntNmb&#x27;: &#x27;513961192309287993&#x27;, &#x27;brthdy&#x27;: &#x27;1923-09-28 00:00:00&#x27;, &#x27;mbl&#x27;: &#x27;13220166640&#x27;, &#x27;fmlyRltn&#x27;: None, &#x27;impCRM&#x27;: 1, &#x27;ecrpBase&#x27;: None, &#x27;uptDtt&#x27;: &#x27;2020-09-22 10:53:59&#x27;}
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">conftest/test_001_manage_member.py::Test_parking::test_add_parking</td>
+          <td class="col-duration">0.18</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>{&#x27;CpnID&#x27;: &#x27;0001&#x27;, &#x27;ID&#x27;: &#x27;0&#x27;, &#x27;ParkID&#x27;: 2681993150, &#x27;PayExplain&#x27;: &#x27;apitest&#x27;, &#x27;Tel&#x27;: &#x27;13251844826&#x27;, &#x27;IsSupWXPay&#x27;: 0, &#x27;IsSupIntg&#x27;: 0, &#x27;IsSupIntgAuto&#x27;: 0, &#x27;ParkUrl&#x27;: &#x27;0&#x27;, &#x27;LoginUrl&#x27;: &#x27;0&#x27;, &#x27;BllNoUrl&#x27;: &#x27;0&#x27;, &#x27;ParkUser&#x27;: &#x27;0&#x27;, &#x27;ParkPwd&#x27;: &#x27;0&#x27;, &#x27;ParkKey&#x27;: &#x27;0&#x27;, &#x27;SecretKey&#x27;: &#x27;0&#x27;, &#x27;Uptr&#x27;: &#x27;miscs3&#x27;, &#x27;UptDtt&#x27;: &#x27;2020-09-22 10:54:14&#x27;}
+添加成功
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">conftest/test_001_manage_member.py::Test_park_rule::test_get_park_rule_page</td>
+          <td class="col-duration">2.15</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>获取数据成功
+{&#x27;id&#x27;: 237, &#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;subID&#x27;: &#x27;3378049226@qq.com&#x27;, &#x27;parkID&#x27;: &#x27;2479496012&#x27;, &#x27;vipTpID&#x27;: &#x27;01&#x27;, &#x27;isEv&#x27;: 0, &#x27;calculaTyp&#x27;: 1, &#x27;freeMinute&#x27;: 0, &#x27;startMinute&#x27;: 0, &#x27;startMoney&#x27;: 5.0, &#x27;startIntg&#x27;: 20.0, &#x27;startGold&#x27;: 0.0, &#x27;intrvalTime&#x27;: 30, &#x27;intrvalMoney&#x27;: 20.0, &#x27;intrvalIntg&#x27;: 200.0, &#x27;intrvalGold&#x27;: 0.0, &#x27;consumMoney&#x27;: 0.0, &#x27;consFreeMinute&#x27;: 0, &#x27;intgSupportHour&#x27;: 0, &#x27;uptr&#x27;: &#x27;miscs3&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-09-22 10:54:19&#x27;}
+{&#x27;id&#x27;: 234, &#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;subID&#x27;: &#x27;3378049226@qq.com&#x27;, &#x27;parkID&#x27;: &#x27;2479496012&#x27;, &#x27;vipTpID&#x27;: &#x27;02&#x27;, &#x27;isEv&#x27;: 0, &#x27;calculaTyp&#x27;: 1, &#x27;freeMinute&#x27;: 0, &#x27;startMinute&#x27;: 0, &#x27;startMoney&#x27;: 5.0, &#x27;startIntg&#x27;: 20.0, &#x27;startGold&#x27;: 0.0, &#x27;intrvalTime&#x27;: 30, &#x27;intrvalMoney&#x27;: 20.0, &#x27;intrvalIntg&#x27;: 200.0, &#x27;intrvalGold&#x27;: 0.0, &#x27;consumMoney&#x27;: 0.0, &#x27;consFreeMinute&#x27;: 0, &#x27;intgSupportHour&#x27;: 0, &#x27;uptr&#x27;: &#x27;miscs3&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-09-04 09:41:57&#x27;}
+{&#x27;id&#x27;: 235, &#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;subID&#x27;: &#x27;3378049226@qq.com&#x27;, &#x27;parkID&#x27;: &#x27;2479496012&#x27;, &#x27;vipTpID&#x27;: &#x27;03&#x27;, &#x27;isEv&#x27;: 0, &#x27;calculaTyp&#x27;: 1, &#x27;freeMinute&#x27;: 0, &#x27;startMinute&#x27;: 0, &#x27;startMoney&#x27;: 5.0, &#x27;startIntg&#x27;: 20.0, &#x27;startGold&#x27;: 0.0, &#x27;intrvalTime&#x27;: 30, &#x27;intrvalMoney&#x27;: 20.0, &#x27;intrvalIntg&#x27;: 200.0, &#x27;intrvalGold&#x27;: 0.0, &#x27;consumMoney&#x27;: 0.0, &#x27;consFreeMinute&#x27;: 0, &#x27;intgSupportHour&#x27;: 0, &#x27;uptr&#x27;: &#x27;miscs3&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-09-04 09:41:57&#x27;}
+{&#x27;id&#x27;: 236, &#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;subID&#x27;: &#x27;3378049226@qq.com&#x27;, &#x27;parkID&#x27;: &#x27;2479496012&#x27;, &#x27;vipTpID&#x27;: &#x27;04&#x27;, &#x27;isEv&#x27;: 0, &#x27;calculaTyp&#x27;: 1, &#x27;freeMinute&#x27;: 0, &#x27;startMinute&#x27;: 0, &#x27;startMoney&#x27;: 5.0, &#x27;startIntg&#x27;: 20.0, &#x27;startGold&#x27;: 0.0, &#x27;intrvalTime&#x27;: 30, &#x27;intrvalMoney&#x27;: 20.0, &#x27;intrvalIntg&#x27;: 200.0, &#x27;intrvalGold&#x27;: 0.0, &#x27;consumMoney&#x27;: 0.0, &#x27;consFreeMinute&#x27;: 0, &#x27;intgSupportHour&#x27;: 0, &#x27;uptr&#x27;: &#x27;miscs3&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-09-04 09:41:57&#x27;}
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">conftest/test_001_manage_member.py::Test_park_rule::test_get_park_rule</td>
+          <td class="col-duration">0.12</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>获取成功
+{&#x27;id&#x27;: 237, &#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;subID&#x27;: &#x27;3378049226@qq.com&#x27;, &#x27;parkID&#x27;: &#x27;2479496012&#x27;, &#x27;vipTpID&#x27;: &#x27;01&#x27;, &#x27;isEv&#x27;: 0, &#x27;calculaTyp&#x27;: 1, &#x27;freeMinute&#x27;: 0, &#x27;startMinute&#x27;: 0, &#x27;startMoney&#x27;: 5.0, &#x27;startIntg&#x27;: 20.0, &#x27;startGold&#x27;: 0.0, &#x27;intrvalTime&#x27;: 30, &#x27;intrvalMoney&#x27;: 20.0, &#x27;intrvalIntg&#x27;: 200.0, &#x27;intrvalGold&#x27;: 0.0, &#x27;consumMoney&#x27;: 0.0, &#x27;consFreeMinute&#x27;: 0, &#x27;intgSupportHour&#x27;: 0, &#x27;uptr&#x27;: &#x27;miscs3&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-09-22 10:54:19&#x27;}
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">conftest/test_001_manage_member.py::Test_park_rule::test_update_park_rule</td>
+          <td class="col-duration">0.10</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>修改成功
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">conftest/test_001_manage_member.py::Test_system_config::test_get_system_config_page</td>
+          <td class="col-duration">0.11</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>获取数据成功
+{&#x27;id&#x27;: 2, &#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;subID&#x27;: &#x27;3378049226@qq.com&#x27;, &#x27;mdlID&#x27;: None, &#x27;code&#x27;: &#x27;CrdTyp&#x27;, &#x27;name&#x27;: &#x27;新注册会员卡类型&#x27;, &#x27;dftVl&#x27;: &#x27;01&#x27;, &#x27;crtVl&#x27;: &#x27;01&#x27;, &#x27;mdfFlg&#x27;: 0, &#x27;brf&#x27;: &#x27;指定新会员卡类型&#x27;, &#x27;uptr&#x27;: &#x27;&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-06-02 11:07:41&#x27;}
+{&#x27;id&#x27;: 6, &#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;subID&#x27;: &#x27;3378049226@qq.com&#x27;, &#x27;mdlID&#x27;: None, &#x27;code&#x27;: &#x27;WIFIPWD&#x27;, &#x27;name&#x27;: &#x27;wifi密码&#x27;, &#x27;dftVl&#x27;: &#x27;88888888&#x27;, &#x27;crtVl&#x27;: &#x27;66668888&#x27;, &#x27;mdfFlg&#x27;: 0, &#x27;brf&#x27;: None, &#x27;uptr&#x27;: &#x27;&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-06-22 14:50:40&#x27;}
+{&#x27;id&#x27;: 7, &#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;subID&#x27;: &#x27;3378049226@qq.com&#x27;, &#x27;mdlID&#x27;: None, &#x27;code&#x27;: &#x27;WIFINAME&#x27;, &#x27;name&#x27;: &#x27;wifi名字&#x27;, &#x27;dftVl&#x27;: &#x27;商城wifi&#x27;, &#x27;crtVl&#x27;: &#x27;商城wifi&#x27;, &#x27;mdfFlg&#x27;: 0, &#x27;brf&#x27;: None, &#x27;uptr&#x27;: &#x27;&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-06-05 10:31:30&#x27;}
+{&#x27;id&#x27;: 12, &#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;subID&#x27;: &#x27;3378049226@qq.com&#x27;, &#x27;mdlID&#x27;: None, &#x27;code&#x27;: &#x27;WifiSys&#x27;, &#x27;name&#x27;: &#x27;Wifi配置&#x27;, &#x27;dftVl&#x27;: &#x27;123456&#x27;, &#x27;crtVl&#x27;: &#x27;123456&#x27;, &#x27;mdfFlg&#x27;: 0, &#x27;brf&#x27;: &#x27;wifi的配置&#x27;, &#x27;uptr&#x27;: &#x27;sys&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-06-19 00:00:00&#x27;}
+{&#x27;id&#x27;: 13, &#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;subID&#x27;: &#x27;3378049226@qq.com&#x27;, &#x27;mdlID&#x27;: None, &#x27;code&#x27;: &#x27;WifiSys&#x27;, &#x27;name&#x27;: &#x27;Wifi配置&#x27;, &#x27;dftVl&#x27;: &#x27;312433&#x27;, &#x27;crtVl&#x27;: &#x27;312433&#x27;, &#x27;mdfFlg&#x27;: 0, &#x27;brf&#x27;: &#x27;Wifi配置&#x27;, &#x27;uptr&#x27;: &#x27;sys&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-06-22 09:36:17&#x27;}
+{&#x27;id&#x27;: 14, &#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;subID&#x27;: &#x27;3378049226@qq.com&#x27;, &#x27;mdlID&#x27;: None, &#x27;code&#x27;: &#x27;IsCrm&#x27;, &#x27;name&#x27;: &#x27;是否是新CRM&#x27;, &#x27;dftVl&#x27;: &#x27;0&#x27;, &#x27;crtVl&#x27;: &#x27;3&#x27;, &#x27;mdfFlg&#x27;: 0, &#x27;brf&#x27;: None, &#x27;uptr&#x27;: &#x27;&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-07-31 17:57:13&#x27;}
+{&#x27;id&#x27;: 27, &#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;subID&#x27;: &#x27;3378049226@qq.com&#x27;, &#x27;mdlID&#x27;: None, &#x27;code&#x27;: &#x27;WcrmUrl&#x27;, &#x27;name&#x27;: &#x27;云crm&#x27;, &#x27;dftVl&#x27;: &#x27;http://api.wcrmoauthapi.weixin.wuerp.com/OAuth/&#x27;, &#x27;crtVl&#x27;: &#x27;http://api.wcrmoauthapi.weixin.wuerp.com/OAuth/&#x27;, &#x27;mdfFlg&#x27;: 0, &#x27;brf&#x27;: None, &#x27;uptr&#x27;: &#x27;sys&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-08-13 15:14:21&#x27;}
+{&#x27;id&#x27;: 28, &#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;subID&#x27;: &#x27;3378049226@qq.com&#x27;, &#x27;mdlID&#x27;: None, &#x27;code&#x27;: &#x27;SubMakeOrg&#x27;, &#x27;name&#x27;: &#x27;制卡机构&#x27;, &#x27;dftVl&#x27;: &#x27;&#x27;, &#x27;crtVl&#x27;: &#x27;0000&#x27;, &#x27;mdfFlg&#x27;: 0, &#x27;brf&#x27;: None, &#x27;uptr&#x27;: &#x27;sys&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-08-13 15:28:37&#x27;}
+{&#x27;id&#x27;: 218, &#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;subID&#x27;: &#x27;3378049226@qq.com&#x27;, &#x27;mdlID&#x27;: &#x27;&#x27;, &#x27;code&#x27;: &#x27;WerpURL&#x27;, &#x27;name&#x27;: &#x27;制卡机构&#x27;, &#x27;dftVl&#x27;: &#x27;http://myshop.wuerp.com&#x27;, &#x27;crtVl&#x27;: &#x27;http://myshop.wuerp.com:8001&#x27;, &#x27;mdfFlg&#x27;: 0, &#x27;brf&#x27;: &#x27;&#x27;, &#x27;uptr&#x27;: &#x27;sys&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-09-11 15:20:28&#x27;}
+{&#x27;id&#x27;: 219, &#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;subID&#x27;: &#x27;3378049226@qq.com&#x27;, &#x27;mdlID&#x27;: None, &#x27;code&#x27;: &#x27;ww&#x27;, &#x27;name&#x27;: &#x27;aa&#x27;, &#x27;dftVl&#x27;: &#x27;0&#x27;, &#x27;crtVl&#x27;: &#x27;1&#x27;, &#x27;mdfFlg&#x27;: 1, &#x27;brf&#x27;: &#x27;3333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333&#x27;, &#x27;uptr&#x27;: &#x27;miscs3&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-09-17 15:52:00&#x27;}
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">conftest/test_001_manage_member.py::Test_system_config::test_update_wifi_password</td>
+          <td class="col-duration">0.11</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>修改成功
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">conftest/test_001_manage_member.py::Test_system_config::test_get_system_config_wifi</td>
+          <td class="col-duration">0.10</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>获取成功
+{&#x27;id&#x27;: 6, &#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;subID&#x27;: &#x27;3378049226@qq.com&#x27;, &#x27;mdlID&#x27;: None, &#x27;code&#x27;: &#x27;WIFIPWD&#x27;, &#x27;name&#x27;: &#x27;wifi密码&#x27;, &#x27;dftVl&#x27;: &#x27;88888888&#x27;, &#x27;crtVl&#x27;: &#x27;66668888&#x27;, &#x27;mdfFlg&#x27;: 0, &#x27;brf&#x27;: None, &#x27;uptr&#x27;: &#x27;&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-06-22 14:50:40&#x27;}
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">conftest/test_001_manage_member.py::Test_signin_rule::test_add_signin_rule</td>
+          <td class="col-duration">0.11</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>{&#x27;Success&#x27;: True, &#x27;Errorcode&#x27;: 0, &#x27;Message&#x27;: &#x27;添加成功&#x27;, &#x27;Data&#x27;: None}
+添加成功
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">conftest/test_001_manage_member.py::Test_signin_rule::test_get_signin_rule_page</td>
+          <td class="col-duration">2.15</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>获取数据成功
+{&#x27;id&#x27;: 27, &#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;subID&#x27;: &#x27;3378049226@qq.com&#x27;, &#x27;typ&#x27;: 1, &#x27;days&#x27;: 1, &#x27;integral&#x27;: 20.0, &#x27;lngValid&#x27;: 1, &#x27;stDt&#x27;: &#x27;2020-09-22 10:54:24&#x27;, &#x27;edDt&#x27;: &#x27;2020-09-25 10:54:24&#x27;, &#x27;isStop&#x27;: 0, &#x27;brf&#x27;: &#x27;apitest&#x27;, &#x27;uptr&#x27;: &#x27;miscs3&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-09-22 10:54:24&#x27;, &#x27;stt&#x27;: 0}
+{&#x27;id&#x27;: 26, &#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;subID&#x27;: &#x27;3378049226@qq.com&#x27;, &#x27;typ&#x27;: 1, &#x27;days&#x27;: 1, &#x27;integral&#x27;: 512.0, &#x27;lngValid&#x27;: 1, &#x27;stDt&#x27;: &#x27;2020-09-18 11:10:54&#x27;, &#x27;edDt&#x27;: &#x27;2020-09-21 11:10:54&#x27;, &#x27;isStop&#x27;: 0, &#x27;brf&#x27;: &#x27;apitest&#x27;, &#x27;uptr&#x27;: &#x27;miscs3&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-09-18 11:11:01&#x27;, &#x27;stt&#x27;: 50}
+{&#x27;id&#x27;: 25, &#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;subID&#x27;: &#x27;3378049226@qq.com&#x27;, &#x27;typ&#x27;: 1, &#x27;days&#x27;: 1, &#x27;integral&#x27;: 50000.0, &#x27;lngValid&#x27;: 1, &#x27;stDt&#x27;: &#x27;2020-09-04 09:42:02&#x27;, &#x27;edDt&#x27;: &#x27;2020-09-07 09:42:02&#x27;, &#x27;isStop&#x27;: 0, &#x27;brf&#x27;: &#x27;apitest&#x27;, &#x27;uptr&#x27;: &#x27;miscs3&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-09-04 09:42:08&#x27;, &#x27;stt&#x27;: 50}
+{&#x27;id&#x27;: 24, &#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;subID&#x27;: &#x27;3378049226@qq.com&#x27;, &#x27;typ&#x27;: 1, &#x27;days&#x27;: 1, &#x27;integral&#x27;: 50000.0, &#x27;lngValid&#x27;: 1, &#x27;stDt&#x27;: &#x27;2020-08-31 15:34:41&#x27;, &#x27;edDt&#x27;: &#x27;2020-09-03 15:34:41&#x27;, &#x27;isStop&#x27;: 0, &#x27;brf&#x27;: &#x27;apitest&#x27;, &#x27;uptr&#x27;: &#x27;miscs3&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-08-31 15:34:47&#x27;, &#x27;stt&#x27;: 50}
+{&#x27;id&#x27;: 21, &#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;subID&#x27;: &#x27;3378049226@qq.com&#x27;, &#x27;typ&#x27;: 1, &#x27;days&#x27;: 1, &#x27;integral&#x27;: 50000.0, &#x27;lngValid&#x27;: 1, &#x27;stDt&#x27;: &#x27;2020-08-25 17:34:03&#x27;, &#x27;edDt&#x27;: &#x27;2020-08-28 17:34:03&#x27;, &#x27;isStop&#x27;: 0, &#x27;brf&#x27;: &#x27;apitest&#x27;, &#x27;uptr&#x27;: &#x27;miscs3&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-08-26 08:49:08&#x27;, &#x27;stt&#x27;: 50}
+{&#x27;id&#x27;: 20, &#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;subID&#x27;: &#x27;3378049226@qq.com&#x27;, &#x27;typ&#x27;: 1, &#x27;days&#x27;: 1, &#x27;integral&#x27;: 20.0, &#x27;lngValid&#x27;: 1, &#x27;stDt&#x27;: &#x27;2020-08-25 17:33:04&#x27;, &#x27;edDt&#x27;: &#x27;2020-08-28 17:33:04&#x27;, &#x27;isStop&#x27;: 1, &#x27;brf&#x27;: &#x27;apitest&#x27;, &#x27;uptr&#x27;: &#x27;miscs3&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-08-25 17:33:55&#x27;, &#x27;stt&#x27;: 0}
+{&#x27;id&#x27;: 18, &#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;subID&#x27;: &#x27;3378049226@qq.com&#x27;, &#x27;typ&#x27;: 1, &#x27;days&#x27;: 1, &#x27;integral&#x27;: 50000.0, &#x27;lngValid&#x27;: 1, &#x27;stDt&#x27;: &#x27;2020-08-25 09:01:29&#x27;, &#x27;edDt&#x27;: &#x27;2020-08-28 09:01:29&#x27;, &#x27;isStop&#x27;: 1, &#x27;brf&#x27;: &#x27;apitest&#x27;, &#x27;uptr&#x27;: &#x27;miscs3&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-08-25 17:32:44&#x27;, &#x27;stt&#x27;: 50}
+{&#x27;id&#x27;: 17, &#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;subID&#x27;: &#x27;3378049226@qq.com&#x27;, &#x27;typ&#x27;: 1, &#x27;days&#x27;: 1, &#x27;integral&#x27;: 50000.0, &#x27;lngValid&#x27;: 1, &#x27;stDt&#x27;: &#x27;2020-08-21 16:20:02&#x27;, &#x27;edDt&#x27;: &#x27;2020-08-24 16:20:02&#x27;, &#x27;isStop&#x27;: 0, &#x27;brf&#x27;: &#x27;apitest&#x27;, &#x27;uptr&#x27;: &#x27;miscs3&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-08-21 16:20:31&#x27;, &#x27;stt&#x27;: 50}
+{&#x27;id&#x27;: 16, &#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;subID&#x27;: &#x27;3378049226@qq.com&#x27;, &#x27;typ&#x27;: 1, &#x27;days&#x27;: 1, &#x27;integral&#x27;: 3000.0, &#x27;lngValid&#x27;: 1, &#x27;stDt&#x27;: &#x27;2020-08-19 10:04:24&#x27;, &#x27;edDt&#x27;: &#x27;2020-08-22 10:04:24&#x27;, &#x27;isStop&#x27;: 1, &#x27;brf&#x27;: &#x27;apitest&#x27;, &#x27;uptr&#x27;: &#x27;miscs3&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-08-21 16:19:34&#x27;, &#x27;stt&#x27;: 50}
+{&#x27;id&#x27;: 15, &#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;subID&#x27;: &#x27;3378049226@qq.com&#x27;, &#x27;typ&#x27;: 1, &#x27;days&#x27;: 1, &#x27;integral&#x27;: 3000.0, &#x27;lngValid&#x27;: 1, &#x27;stDt&#x27;: &#x27;2020-08-11 09:52:15&#x27;, &#x27;edDt&#x27;: &#x27;2020-08-14 09:52:15&#x27;, &#x27;isStop&#x27;: 0, &#x27;brf&#x27;: &#x27;apitest&#x27;, &#x27;uptr&#x27;: &#x27;miscs3&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-08-11 09:52:23&#x27;, &#x27;stt&#x27;: 50}
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">conftest/test_001_manage_member.py::Test_signin_rule::test_update_signin_rule</td>
+          <td class="col-duration">0.11</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>{&#x27;CpnID&#x27;: &#x27;0001&#x27;, &#x27;SubID&#x27;: &#x27;3378049226@qq.com&#x27;, &#x27;ID&#x27;: &#x27;27&#x27;, &#x27;Typ&#x27;: &#x27;1&#x27;, &#x27;Days&#x27;: &#x27;1&#x27;, &#x27;Integral&#x27;: &#x27;512&#x27;, &#x27;LngValid&#x27;: &#x27;1&#x27;, &#x27;IsStop&#x27;: &#x27;0&#x27;, &#x27;StDt&#x27;: &#x27;2020-09-22 10:54:29&#x27;, &#x27;EdDt&#x27;: &#x27;2020-09-25 10:54:29&#x27;, &#x27;Stt&#x27;: &#x27;50&#x27;, &#x27;Brf&#x27;: &#x27;apitest update&#x27;, &#x27;Uptr&#x27;: &#x27;miscs3&#x27;, &#x27;UptDtt&#x27;: &#x27;2020-09-22 10:54:29&#x27;, &#x27;parm&#x27;: &#x27;Integral,Stt&#x27;}
+修改成功
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">conftest/test_001_manage_member.py::Test_signin_rule::test_get_signin_rule</td>
+          <td class="col-duration">0.10</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>获取成功
+{&#x27;id&#x27;: 27, &#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;subID&#x27;: &#x27;3378049226@qq.com&#x27;, &#x27;typ&#x27;: 1, &#x27;days&#x27;: 1, &#x27;integral&#x27;: 512.0, &#x27;lngValid&#x27;: 1, &#x27;stDt&#x27;: &#x27;2020-09-22 10:54:24&#x27;, &#x27;edDt&#x27;: &#x27;2020-09-25 10:54:24&#x27;, &#x27;isStop&#x27;: 0, &#x27;brf&#x27;: &#x27;apitest&#x27;, &#x27;uptr&#x27;: &#x27;miscs3&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-09-22 10:54:29&#x27;, &#x27;stt&#x27;: 50}
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">conftest/test_001_manage_member.py::Test_advert::test_upload_advert_s3</td>
+          <td class="col-duration">4.02</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>上传成功
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">conftest/test_001_manage_member.py::Test_advert::test_add_advert_position</td>
+          <td class="col-duration">0.11</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>{&#x27;CpnID&#x27;: &#x27;0001&#x27;, &#x27;SubID&#x27;: &#x27;3378049226@qq.com&#x27;, &#x27;ID&#x27;: &#x27;0&#x27;, &#x27;Name&#x27;: &#x27;浪漫热夏&#x27;, &#x27;KyWrd&#x27;: &#x27;&#x27;, &#x27;ShwPosi&#x27;: &#x27;1&#x27;, &#x27;Clms&#x27;: &#x27;1&#x27;, &#x27;AdWidth&#x27;: &#x27;0&#x27;, &#x27;AdHeight&#x27;: &#x27;0&#x27;, &#x27;AdTyp&#x27;: &#x27;0&#x27;, &#x27;OpnTyp&#x27;: &#x27;0&#x27;, &#x27;Stt&#x27;: &#x27;0&#x27;, &#x27;StDt&#x27;: &#x27;2020-09-22 10:54:35&#x27;, &#x27;EdDt&#x27;: &#x27;2020-09-25 10:54:35&#x27;, &#x27;Brf&#x27;: &#x27;apitest&#x27;, &#x27;Deleted&#x27;: &#x27;N&#x27;, &#x27;Uptr&#x27;: &#x27;miscs3&#x27;, &#x27;UptDtt&#x27;: &#x27;2020-09-22 10:54:35&#x27;, &#x27;List&#x27;: [{&#x27;ID&#x27;: &#x27;1&#x27;, &#x27;CpnID&#x27;: &#x27;0001&#x27;, &#x27;SubID&#x27;: &#x27;3378049226@qq.com&#x27;, &#x27;Name&#x27;: &#x27;浪漫热夏&#x27;, &#x27;AdPosiID&#x27;: &#x27;0&#x27;, &#x27;AdText&#x27;: &#x27;&#x27;, &#x27;KyWrd&#x27;: &#x27;&#x27;, &#x27;Rdx&#x27;: &#x27;0&#x27;, &#x27;StDt&#x27;: &#x27;2020-09-22 10:54:35&#x27;, &#x27;EdDt&#x27;: &#x27;2020-09-25 10:54:35&#x27;, &#x27;AdTyp&#x27;: &#x27;4&#x27;, &#x27;Intro&#x27;: &#x27;https://s3.cn-northwest-1.amazonaws.com.cn/wechatcard.test.system/0001/Image/Gst/202009/20200922105430951456195.jpg&#x27;, &#x27;ShwTyp&#x27;: &#x27;0&#x27;, &#x27;IsShw&#x27;: &#x27;0&#x27;, &#x27;Stt&#x27;: &#x27;50&#x27;, &#x27;CrtUsr&#x27;: &#x27;0&#x27;, &#x27;CrtDt&#x27;: &#x27;2020-09-22 10:54:35&#x27;, &#x27;Brf&#x27;: &#x27;apitest&#x27;, &#x27;Deleted&#x27;: &#x27;N&#x27;, &#x27;Uptr&#x27;: &#x27;0&#x27;, &#x27;UptDtt&#x27;: &#x27;2020-09-22 10:54:35&#x27;}]}
+
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">conftest/test_001_manage_member.py::Test_advert::test_get_advert_position_page</td>
+          <td class="col-duration">20.51</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>获取数据成功
+{&#x27;id&#x27;: 47, &#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;subID&#x27;: &#x27;3378049226@qq.com&#x27;, &#x27;name&#x27;: &#x27;浪漫热夏&#x27;, &#x27;kyWrd&#x27;: None, &#x27;shwPosi&#x27;: &#x27;1&#x27;, &#x27;clms&#x27;: 1, &#x27;adWidth&#x27;: 0.0, &#x27;adHeight&#x27;: 0.0, &#x27;adTyp&#x27;: 0, &#x27;opnTyp&#x27;: 0, &#x27;stt&#x27;: 0, &#x27;stDt&#x27;: &#x27;2020-09-22 10:54:35&#x27;, &#x27;edDt&#x27;: &#x27;2020-09-25 10:54:35&#x27;, &#x27;brf&#x27;: &#x27;apitest&#x27;, &#x27;deleted&#x27;: &#x27;N&#x27;, &#x27;uptr&#x27;: &#x27;miscs3&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-09-22 10:54:36&#x27;}
+{&#x27;id&#x27;: 46, &#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;subID&#x27;: &#x27;3378049226@qq.com&#x27;, &#x27;name&#x27;: &#x27;浪漫热夏&#x27;, &#x27;kyWrd&#x27;: None, &#x27;shwPosi&#x27;: &#x27;1&#x27;, &#x27;clms&#x27;: 1, &#x27;adWidth&#x27;: 0.0, &#x27;adHeight&#x27;: 0.0, &#x27;adTyp&#x27;: 0, &#x27;opnTyp&#x27;: 0, &#x27;stt&#x27;: 0, &#x27;stDt&#x27;: &#x27;2020-09-04 09:42:12&#x27;, &#x27;edDt&#x27;: &#x27;2020-09-07 09:42:12&#x27;, &#x27;brf&#x27;: &#x27;apitest&#x27;, &#x27;deleted&#x27;: &#x27;N&#x27;, &#x27;uptr&#x27;: &#x27;miscs3&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-09-04 09:42:14&#x27;}
+{&#x27;id&#x27;: 45, &#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;subID&#x27;: &#x27;3378049226@qq.com&#x27;, &#x27;name&#x27;: &#x27;浪漫热夏&#x27;, &#x27;kyWrd&#x27;: None, &#x27;shwPosi&#x27;: &#x27;1&#x27;, &#x27;clms&#x27;: 1, &#x27;adWidth&#x27;: 0.0, &#x27;adHeight&#x27;: 0.0, &#x27;adTyp&#x27;: 0, &#x27;opnTyp&#x27;: 0, &#x27;stt&#x27;: 0, &#x27;stDt&#x27;: &#x27;2020-08-31 15:34:50&#x27;, &#x27;edDt&#x27;: &#x27;2020-09-03 15:34:50&#x27;, &#x27;brf&#x27;: &#x27;apitest&#x27;, &#x27;deleted&#x27;: &#x27;N&#x27;, &#x27;uptr&#x27;: &#x27;miscs3&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-08-31 15:34:52&#x27;}
+{&#x27;id&#x27;: 44, &#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;subID&#x27;: &#x27;3378049226@qq.com&#x27;, &#x27;name&#x27;: &#x27;浪漫热夏&#x27;, &#x27;kyWrd&#x27;: None, &#x27;shwPosi&#x27;: &#x27;1&#x27;, &#x27;clms&#x27;: 1, &#x27;adWidth&#x27;: 0.0, &#x27;adHeight&#x27;: 0.0, &#x27;adTyp&#x27;: 0, &#x27;opnTyp&#x27;: 0, &#x27;stt&#x27;: 0, &#x27;stDt&#x27;: &#x27;2020-08-26 10:55:32&#x27;, &#x27;edDt&#x27;: &#x27;2020-08-29 10:55:32&#x27;, &#x27;brf&#x27;: &#x27;apitest&#x27;, &#x27;deleted&#x27;: &#x27;N&#x27;, &#x27;uptr&#x27;: &#x27;miscs3&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-08-26 10:55:34&#x27;}
+{&#x27;id&#x27;: 43, &#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;subID&#x27;: &#x27;3378049226@qq.com&#x27;, &#x27;name&#x27;: &#x27;浪漫热夏&#x27;, &#x27;kyWrd&#x27;: None, &#x27;shwPosi&#x27;: &#x27;1&#x27;, &#x27;clms&#x27;: 1, &#x27;adWidth&#x27;: 0.0, &#x27;adHeight&#x27;: 0.0, &#x27;adTyp&#x27;: 0, &#x27;opnTyp&#x27;: 0, &#x27;stt&#x27;: 0, &#x27;stDt&#x27;: &#x27;2020-08-26 10:39:42&#x27;, &#x27;edDt&#x27;: &#x27;2020-08-29 10:39:42&#x27;, &#x27;brf&#x27;: &#x27;apitest&#x27;, &#x27;deleted&#x27;: &#x27;N&#x27;, &#x27;uptr&#x27;: &#x27;miscs3&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-08-26 10:39:44&#x27;}
+{&#x27;id&#x27;: 42, &#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;subID&#x27;: &#x27;3378049226@qq.com&#x27;, &#x27;name&#x27;: &#x27;浪漫热夏&#x27;, &#x27;kyWrd&#x27;: None, &#x27;shwPosi&#x27;: &#x27;1&#x27;, &#x27;clms&#x27;: 1, &#x27;adWidth&#x27;: 0.0, &#x27;adHeight&#x27;: 0.0, &#x27;adTyp&#x27;: 0, &#x27;opnTyp&#x27;: 0, &#x27;stt&#x27;: 0, &#x27;stDt&#x27;: &#x27;2020-08-26 10:18:39&#x27;, &#x27;edDt&#x27;: &#x27;2020-08-29 10:18:39&#x27;, &#x27;brf&#x27;: &#x27;apitest&#x27;, &#x27;deleted&#x27;: &#x27;N&#x27;, &#x27;uptr&#x27;: &#x27;miscs3&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-08-26 10:18:42&#x27;}
+{&#x27;id&#x27;: 41, &#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;subID&#x27;: &#x27;3378049226@qq.com&#x27;, &#x27;name&#x27;: &#x27;浪漫热夏&#x27;, &#x27;kyWrd&#x27;: None, &#x27;shwPosi&#x27;: &#x27;1&#x27;, &#x27;clms&#x27;: 1, &#x27;adWidth&#x27;: 0.0, &#x27;adHeight&#x27;: 0.0, &#x27;adTyp&#x27;: 0, &#x27;opnTyp&#x27;: 0, &#x27;stt&#x27;: 0, &#x27;stDt&#x27;: &#x27;2020-08-26 10:15:18&#x27;, &#x27;edDt&#x27;: &#x27;2020-08-29 10:15:18&#x27;, &#x27;brf&#x27;: &#x27;apitest&#x27;, &#x27;deleted&#x27;: &#x27;N&#x27;, &#x27;uptr&#x27;: &#x27;miscs3&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-08-26 10:15:20&#x27;}
+{&#x27;id&#x27;: 40, &#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;subID&#x27;: &#x27;3378049226@qq.com&#x27;, &#x27;name&#x27;: &#x27;浪漫热夏&#x27;, &#x27;kyWrd&#x27;: None, &#x27;shwPosi&#x27;: &#x27;1&#x27;, &#x27;clms&#x27;: 1, &#x27;adWidth&#x27;: 0.0, &#x27;adHeight&#x27;: 0.0, &#x27;adTyp&#x27;: 0, &#x27;opnTyp&#x27;: 0, &#x27;stt&#x27;: 0, &#x27;stDt&#x27;: &#x27;2020-08-26 10:07:43&#x27;, &#x27;edDt&#x27;: &#x27;2020-08-29 10:07:43&#x27;, &#x27;brf&#x27;: &#x27;apitest&#x27;, &#x27;deleted&#x27;: &#x27;N&#x27;, &#x27;uptr&#x27;: &#x27;miscs3&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-08-26 10:07:46&#x27;}
+{&#x27;id&#x27;: 39, &#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;subID&#x27;: &#x27;3378049226@qq.com&#x27;, &#x27;name&#x27;: &#x27;浪漫热夏&#x27;, &#x27;kyWrd&#x27;: None, &#x27;shwPosi&#x27;: &#x27;1&#x27;, &#x27;clms&#x27;: 1, &#x27;adWidth&#x27;: 0.0, &#x27;adHeight&#x27;: 0.0, &#x27;adTyp&#x27;: 0, &#x27;opnTyp&#x27;: 0, &#x27;stt&#x27;: 0, &#x27;stDt&#x27;: &#x27;2020-08-26 08:49:11&#x27;, &#x27;edDt&#x27;: &#x27;2020-08-29 08:49:11&#x27;, &#x27;brf&#x27;: &#x27;apitest&#x27;, &#x27;deleted&#x27;: &#x27;N&#x27;, &#x27;uptr&#x27;: &#x27;miscs3&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-08-26 08:49:13&#x27;}
+{&#x27;id&#x27;: 38, &#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;subID&#x27;: &#x27;3378049226@qq.com&#x27;, &#x27;name&#x27;: &#x27;浪漫热夏&#x27;, &#x27;kyWrd&#x27;: None, &#x27;shwPosi&#x27;: &#x27;1&#x27;, &#x27;clms&#x27;: 1, &#x27;adWidth&#x27;: 0.0, &#x27;adHeight&#x27;: 0.0, &#x27;adTyp&#x27;: 0, &#x27;opnTyp&#x27;: 0, &#x27;stt&#x27;: 0, &#x27;stDt&#x27;: &#x27;2020-08-25 15:28:41&#x27;, &#x27;edDt&#x27;: &#x27;2020-08-28 15:28:41&#x27;, &#x27;brf&#x27;: &#x27;apitest&#x27;, &#x27;deleted&#x27;: &#x27;N&#x27;, &#x27;uptr&#x27;: &#x27;miscs3&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-08-25 15:28:42&#x27;}
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">conftest/test_001_manage_member.py::Test_advert::test_get_advert_position</td>
+          <td class="col-duration">0.12</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>{&#x27;CpnID&#x27;: &#x27;0001&#x27;, &#x27;id&#x27;: &#x27;47&#x27;}
+{&#x27;Success&#x27;: True, &#x27;Errorcode&#x27;: 0, &#x27;Message&#x27;: &#x27;&#x27;, &#x27;Data&#x27;: {&#x27;AdPosi&#x27;: {&#x27;id&#x27;: 47, &#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;subID&#x27;: &#x27;3378049226@qq.com&#x27;, &#x27;name&#x27;: &#x27;浪漫热夏&#x27;, &#x27;kyWrd&#x27;: None, &#x27;shwPosi&#x27;: &#x27;1&#x27;, &#x27;clms&#x27;: 1, &#x27;adWidth&#x27;: 0.0, &#x27;adHeight&#x27;: 0.0, &#x27;adTyp&#x27;: 0, &#x27;opnTyp&#x27;: 0, &#x27;stt&#x27;: 0, &#x27;stDt&#x27;: &#x27;2020-09-22 10:54:35&#x27;, &#x27;edDt&#x27;: &#x27;2020-09-25 10:54:35&#x27;, &#x27;brf&#x27;: &#x27;apitest&#x27;, &#x27;deleted&#x27;: &#x27;N&#x27;, &#x27;uptr&#x27;: &#x27;miscs3&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-09-22 10:54:36&#x27;}, &#x27;Ad&#x27;: []}}
+{&#x27;id&#x27;: 47, &#x27;cpnID&#x27;: &#x27;0001&#x27;, &#x27;subID&#x27;: &#x27;3378049226@qq.com&#x27;, &#x27;name&#x27;: &#x27;浪漫热夏&#x27;, &#x27;kyWrd&#x27;: None, &#x27;shwPosi&#x27;: &#x27;1&#x27;, &#x27;clms&#x27;: 1, &#x27;adWidth&#x27;: 0.0, &#x27;adHeight&#x27;: 0.0, &#x27;adTyp&#x27;: 0, &#x27;opnTyp&#x27;: 0, &#x27;stt&#x27;: 0, &#x27;stDt&#x27;: &#x27;2020-09-22 10:54:35&#x27;, &#x27;edDt&#x27;: &#x27;2020-09-25 10:54:35&#x27;, &#x27;brf&#x27;: &#x27;apitest&#x27;, &#x27;deleted&#x27;: &#x27;N&#x27;, &#x27;uptr&#x27;: &#x27;miscs3&#x27;, &#x27;uptDtt&#x27;: &#x27;2020-09-22 10:54:36&#x27;}
+<br/></div></td></tr></tbody></table></body></html>

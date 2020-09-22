@@ -4,28 +4,21 @@ import xlsxwriter
 from time import sleep
 from bs4 import BeautifulSoup
 import datetime
-import sqlite3
 import pymysql
 
 
-
 class Way():
-    # response dispose to capitalize
-    def response_dispose(self,dict_info):
-        new_dict = {}
-        for i, n in dict_info.items():
-                new_dict[i.capitalize()] = n
-        return new_dict
-
+    # mysql config
+    def __init__(self):
+        self.localhost = 'localhost'
+        self.username = 'root'
+        self.password = 'root'
+        self.database = 'newcrm'
     # sql insert 
     def sql_insert(self,table,data):
-        # sqlite3 connect
-        # conn = sqlite3.connect('../test_data/test.db')
-
-        # pymysql connect
-        conn = pymysql.connect('localhost','root','root','newcrm')
+        # mysql connect
+        conn = pymysql.connect(self.localhost,self.username,self.password,self.database)
         cur = conn.cursor()
-        
         try:
             # create table
             sql="create table %s(%s varchar(40) primary key)" % (table,'insert_date')
@@ -37,19 +30,18 @@ class Way():
         except:
             pass
         finally:
+            now=datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
             for i,n in data.items():
                 # date desc select first col data whether equal now_date
                 sql="select insert_date from %s order by insert_date DESC limit 0,1" % (table)
                 cur.execute(sql)
                 x=cur.fetchall()
-                now=datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
                 # exist update data
                 if x and str(x[0][0])==str(now):
                     sql="update %s set %s='%s' where insert_date='%s'" % (table,i,n,now)
                     cur.execute(sql)
                 # inexistence insert data
                 else:
-                
                     sql="insert into %s(insert_date,%s) values('%s','%s')" % (table,i,now,n)
                     cur.execute(sql)
         cur.close()
@@ -58,37 +50,49 @@ class Way():
 
     # sql select 
     def sql_select(self,table):
-        data={}
-        # sqlite3 connect
-        # conn = sqlite3.connect('../test_data/test.db')
-
-        # pymysql connect
-        conn = pymysql.connect('localhost','root','root','newcrm')
-
+        # mysql connect
+        conn = pymysql.connect(self.localhost,self.username,self.password,self.database)
         cur = conn.cursor()
+        data={}
         # date desc select first row
         sql="select * from %s order by insert_date DESC limit 0,1" % table
         cur.execute(sql)
         select_data=cur.fetchone()
-
-        # sqlinte3 select col_naame
-        # sql="PRAGMA table_info(%s)" % table
-
         # pymysql select col_naame
         sql="select COLUMN_NAME from information_schema.COLUMNS where table_name = '%s'" % table
-
         cur.execute(sql)
         row_name=cur.fetchall()
         for i in range(len(row_name)):
             # pymysql
             data['%s' % row_name[i][0]]=select_data[i]
-
-            # sqlinte3
-            # data['%s' % row_name[i][1]]=select_data[i]
-
         cur.close()
         conn.close()
         return data
+        
+    def sql_select_commodity_data(self,table):
+        # mysql connect
+        conn = pymysql.connect(self.localhost,self.username,self.password,self.database)
+        cur = conn.cursor()
+        data={}
+        # select row sum
+        sql="select count(*) from commodity_data"
+        cur.execute(sql)
+        select_sum_row=cur.fetchone()
+        # random select one row
+        sql="select * from %s limit %s,1" % (table,sum(random.sample(range(select_sum_row[0]),1)))
+        cur.execute(sql)
+        select_data=cur.fetchone()
+        # pymysql select col_naame
+        sql="select COLUMN_NAME from information_schema.COLUMNS where table_name = '%s'" % table
+        cur.execute(sql)
+        row_name=cur.fetchall()
+        for i in range(len(row_name)):
+            # pymysql
+            data['%s' % row_name[i][0]]=select_data[i]
+        cur.close()
+        conn.close()
+        return data
+    
         
 comm_way=Way()
 
@@ -122,13 +126,13 @@ def start():
     list_c=[]
     #商品品牌
     list_d=[]
-    for i in range(7):
+    for i in range(10):
         # 休闲食品
-        # url='http://category.dangdang.com/pg%s-cid4005626.html'% str(i+1)
+        url='http://category.dangdang.com/pg%s-cid4005626.html'% str(i+1)
         # 酒
         # url='http://category.dangdang.com/pg%s-cid4005626.html'% str(i+1)
         # 茶
-        url='http://category.dangdang.com/pg%s-cid4005625.html'% str(i+1)
+        # url='http://category.dangdang.com/pg%s-cid4005625.html'% str(i+1)
 
 
         response= session_z.get(url=url,headers=headers,cookies=cookie)

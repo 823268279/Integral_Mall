@@ -214,7 +214,6 @@ class Test_commodity_putaway():
                         data_sublist["Uptr"] = manage["username"]
                         data_sublist["UptDtt"] = now_time["ymd_hms"]
                         data["GdsCnvr"] = '[%s]' % data_sublist
-                        print(data)
                         response=requests.post(url=manage['url'] % '/GdsCnvrtRole/EditGdsCnvrt',data=data,headers=headers)
                         response_json = comm_way.response_dispose(response.json())
                         print(response_json['Message'])
@@ -237,7 +236,6 @@ class Test_commodity_putaway():
                         data['PageIndex'] = '1'
                         data['PageSize'] = '10'
                         data['SortType'] = "2"
-                        print(data)
                         response=requests.post(url=manage['url'] % '/GdsCnvrtRole/QueryGdsCnvrtRoleList',data=data,headers=headers)
                         response_json = comm_way.response_dispose(response.json())
                         print(response_json['Message'])
@@ -280,7 +278,6 @@ class Test_remove_putaway_commodity():
                         data['GdsCnvrtID'] = ''
                         data['PgIndex'] = '1'
                         data['PgSize'] = '10'
-                        print(data)
                         response=requests.post(url=manage['url'] % '/GdsCnvrt/GetGdsCnvrt',data=data,headers=headers)
                         response_json = comm_way.response_dispose(response.json())
                         print(response_json['Message'])
@@ -306,7 +303,6 @@ class Test_remove_putaway_commodity():
                         data['CnvrtID'] = putaway_commodity_page_response_data['id']            #商品上架单ID
                         data['Uptr'] = manage['username']              
                         data['IsOff'] = True            #是否下架[true-下架，false-上架]
-                        print(data)
                         response=requests.post(url=manage['url'] % '/GdsCnvrt/OnOffTheShelf',data=data,headers=headers)
                         response_json = comm_way.response_dispose(response.json())
                         print(response_json)
